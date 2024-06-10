@@ -10,7 +10,7 @@ async function bootstrap() {
   const config = new DocumentBuilder().setTitle('server').build();
   const document = SwaggerModule.createDocument(app, config);
   app.useGlobalPipes(new ValidationPipe());
-  app.use(cookieParser);
+  app.use(cookieParser());
   SwaggerModule.setup('api', app, document);
 
   await app.listen(3000);
