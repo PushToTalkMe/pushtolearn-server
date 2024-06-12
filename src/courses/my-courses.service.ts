@@ -20,13 +20,24 @@ export class MyCoursesService {
     });
   }
 
-  async getMyCourses(userId: number) {
+  async getMyCoursesId(userId: number) {
     const myCourses = await this.dbService.myCourse.findMany({
       where: { userId },
     });
-    const myCoursesId = myCourses.map((course) => course.courseId);
+    return myCourses.map((course) => course.courseId);
+  }
+
+  async getMyCourses(userId: number) {
+    const myCoursesId = await this.getMyCoursesId(userId);
     return this.dbService.course.findMany({
       where: { id: { in: myCoursesId } },
+    });
+  }
+
+  async getNotMyCourses(userId: number) {
+    const myCoursesId = await this.getMyCoursesId(userId);
+    return this.dbService.course.findMany({
+      where: { id: { notIn: myCoursesId } },
     });
   }
 }

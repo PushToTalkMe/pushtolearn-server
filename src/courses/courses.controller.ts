@@ -18,6 +18,7 @@ import { SessionInfo } from 'src/auth/session-info.decorator';
 import { CoursesService } from './courses.service';
 import { SessionInfoDto } from 'src/auth/dto';
 import { MyCoursesService } from './my-courses.service';
+import { IdValidationPipe } from 'src/pipes/id-validation.pipe';
 
 @Controller('courses')
 @UseGuards(AuthGuard)
@@ -47,8 +48,8 @@ export class CoursesController {
   @ApiOkResponse({
     type: [GetAllCoursesDto],
   })
-  async getAllCourses() {
-    return this.coursesService.getAllCourses();
+  async getAllCourses(@SessionInfo() session: SessionInfoDto) {
+    return this.coursesService.getAllCourses(session.id);
   }
 
   @Get('my')
@@ -57,5 +58,16 @@ export class CoursesController {
   })
   async getMyCourses(@SessionInfo() session: SessionInfoDto) {
     return this.myCoursesService.getMyCourses(session.id);
+  }
+
+  @Get('/my/:courseId')
+  @ApiOkResponse({
+    type: GetAllCoursesDto,
+  })
+  async getCourseById(
+    @Param('courseId', IdValidationPipe) courseId: string,
+    @SessionInfo() session: SessionInfoDto,
+  ) {
+    return this.coursesService.getCourseById(+courseId, session.id);
   }
 }

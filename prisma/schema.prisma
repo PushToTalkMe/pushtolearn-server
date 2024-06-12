@@ -58,7 +58,7 @@ model Section {
 
 model Lesson {
 	id Int @id @default(autoincrement())
-	sectionId Int @unique
+	sectionId Int
 	section Section @relation(fields: [sectionId], references: [id])
 	title String
 	text String
