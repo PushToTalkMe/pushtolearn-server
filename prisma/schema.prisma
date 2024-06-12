@@ -12,4 +12,55 @@ model User {
   email String  @unique
   hash String
 	salt String
+	account Account?
+  myCourses MyCourse[]
+}
+
+model Account {
+  id Int @id @default(autoincrement())
+  userId Int @unique
+  user User @relation(fields: [userId], references: [id])
+  firstName String
+	lastName String
+	username String
+	createdAt DateTime @default(now())
+}
+
+model MyCourse {
+	id Int @id @default(autoincrement())
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+	courseId Int
+  course Course @relation(fields: [courseId], references: [id])
+}
+
+model Course {
+  id Int @id @default(autoincrement())
+	title String
+	author String
+	img String
+	duration String
+	tags String[]
+	price Int
+  myCourses MyCourse[]
+	sections Section[]
+  createdAt DateTime @default(now())
+}
+
+model Section {
+  id        Int       @id @default(autoincrement())
+  title     String
+  lessons   Lesson[]
+  courseId  Int
+  course    Course    @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Lesson {
+	id Int @id @default(autoincrement())
+	sectionId Int @unique
+	section Section @relation(fields: [sectionId], references: [id])
+	title String
+	text String
+  createdAt DateTime @default(now())
 }
