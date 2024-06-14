@@ -12,6 +12,7 @@ model User {
   email String  @unique
   hash String
 	salt String
+	role String
 	account Account?
   myCourses MyCourse[]
 }
@@ -42,6 +43,7 @@ model Course {
 	duration String
 	tags String[]
 	price Int
+	sequence Int @default(autoincrement())
   myCourses MyCourse[]
 	sections Section[]
   createdAt DateTime @default(now())
@@ -52,6 +54,7 @@ model Section {
   title     String
   lessons   Lesson[]
   courseId  Int
+	sequence Int @default(autoincrement())
   course    Course    @relation(fields: [courseId], references: [id])
   createdAt DateTime @default(now())
 }
@@ -60,6 +63,7 @@ model Lesson {
 	id Int @id @default(autoincrement())
 	sectionId Int
 	section Section @relation(fields: [sectionId], references: [id])
+	sequence Int @default(autoincrement())
 	title String
 	text String
   createdAt DateTime @default(now())

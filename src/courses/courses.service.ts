@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { DbService } from 'src/db/db.service';
-import { CreateCourseBodyDto } from './dto';
+import { CreateCoursesBodyDtoWithOwner, PatchCourseDto } from './dto';
 import { MyCoursesService } from './my-courses.service';
 
 @Injectable()
@@ -9,9 +9,25 @@ export class CoursesService {
     private readonly dbService: DbService,
     private readonly myCoursesService: MyCoursesService,
   ) {}
-  async create(dto: CreateCourseBodyDto & { author: string }) {
-    return this.dbService.course.create({
-      data: dto,
+  async create(dto: CreateCoursesBodyDtoWithOwner, userId: number) {
+    return await this.dbService.$transaction(async () => {
+      const course = await this.dbService.course.create({
+        data: dto,
+      });
+      await this.myCoursesService.addCourse(userId, course.id);
+    });
+  }
+
+  async patchCourse(courseId: number, patch: PatchCourseDto) {
+    return this.dbService.course.update({
+      where: { id: courseId },
+      data: { ...patch },
+    });
+  }
+
+  async getCourse(courseId: number) {
+    return this.dbService.course.findFirst({
+      where: { id: courseId },
     });
   }
 
@@ -35,7 +51,7 @@ export class CoursesService {
     const notMyCourses = this.myCoursesService.getNotMyCourses(userId);
     if (!notMyCourses) {
       throw new BadRequestException({
-        message: 'Вы приобрели все существующие курсы',
+        message: 'Вы приобрели все существующие курсы!',
       });
     }
     return notMyCourses;

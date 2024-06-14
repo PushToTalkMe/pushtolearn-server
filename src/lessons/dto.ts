@@ -1,21 +1,30 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, IsOptional, IsString } from 'class-validator';
 
-export class CreateSectionBodyDto {
+export class CreateLessonBodyDto {
   @ApiProperty({ example: 'Введение' })
   @IsString()
   title: string;
 
+  @ApiProperty({ example: 'Текст в формате markdown' })
+  @IsString()
+  text: string;
+
   @ApiProperty({ example: '1' })
   @IsNumber()
-  courseId: number;
+  sectionId: number;
 }
 
-export class PatchSectionDto {
+export class PatchLessonDto {
   @ApiProperty({ example: 'Введение' })
   @IsString()
   @IsOptional()
   title?: string;
+
+  @ApiProperty({ example: 'Текст в формате markdown' })
+  @IsString()
+  @IsOptional()
+  text?: string;
 
   @ApiProperty({ example: '5' })
   @IsNumber()

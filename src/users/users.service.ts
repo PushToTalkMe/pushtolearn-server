@@ -12,10 +12,10 @@ export class UsersService {
     return this.dbService.user.findFirst({ where: { email } });
   }
 
-  async create(email: string, hash: string, salt: string) {
+  async create(email: string, hash: string, salt: string, role: string) {
     return await this.dbService.$transaction(async () => {
       const user = await this.dbService.user.create({
-        data: { email, hash, salt },
+        data: { email, hash, salt, role },
       });
       await this.accountService.create(user.id);
       return user;

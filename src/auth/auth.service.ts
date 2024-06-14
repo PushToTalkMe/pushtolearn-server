@@ -22,11 +22,14 @@ export class AuthService {
     const salt = this.passwordService.getSalt();
     const hash = this.passwordService.getHash(password, salt);
 
-    const newUser = await this.usersService.create(email, hash, salt);
+    const role = 'student';
+
+    const newUser = await this.usersService.create(email, hash, salt, role);
 
     const accessToken = await this.jwtService.signAsync({
       id: newUser.id,
       email: newUser.email,
+      role: role,
     });
     return { accessToken };
   }
@@ -45,6 +48,7 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync({
       id: user.id,
       email: user.email,
+      role: user.role,
     });
     return { accessToken };
   }

@@ -31,6 +31,7 @@ export class MyCoursesService {
     const myCoursesId = await this.getMyCoursesId(userId);
     return this.dbService.course.findMany({
       where: { id: { in: myCoursesId } },
+      orderBy: { sequence: 'asc' },
     });
   }
 
@@ -38,6 +39,7 @@ export class MyCoursesService {
     const myCoursesId = await this.getMyCoursesId(userId);
     return this.dbService.course.findMany({
       where: { id: { notIn: myCoursesId } },
+      orderBy: { sequence: 'asc' },
     });
   }
 }

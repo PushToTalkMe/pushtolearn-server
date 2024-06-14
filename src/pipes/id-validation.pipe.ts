@@ -15,6 +15,6 @@ export class IdValidationPipe implements PipeTransform {
     if (typeof +value !== 'number') {
       throw new BadRequestException(ID_VALIDATION_ERROR);
     }
-    return value;
+    return +value;
   }
 }

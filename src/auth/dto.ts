@@ -33,6 +33,9 @@ export class SessionInfoDto {
   email: string;
 
   @ApiProperty()
+  role: string;
+
+  @ApiProperty()
   'iat': number;
 
   @ApiProperty()
