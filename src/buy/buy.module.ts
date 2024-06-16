@@ -3,9 +3,9 @@ import { BuyController } from './buy.controller';
 import { BuyService } from './buy.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { getJWTConfig } from 'src/configs/jwt.config';
-import { CoursesModule } from 'src/courses/courses.module';
-import { DbModule } from 'src/db/db.module';
+import { getJWTConfig } from '../configs/jwt.config';
+import { CoursesModule } from '../courses/courses.module';
+import { DbModule } from '../db/db.module';
 
 @Module({
   imports: [

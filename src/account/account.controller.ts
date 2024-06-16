@@ -2,9 +2,9 @@ import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
 import { ApiOkResponse } from '@nestjs/swagger';
 import { AccountDto, PatchAccountDto } from './dto';
 import { AccountService } from './account.service';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { SessionInfo } from 'src/auth/session-info.decorator';
-import { SessionInfoDto } from 'src/auth/dto';
+import { AuthGuard } from '../auth/auth.guard';
+import { SessionInfo } from '../auth/session-info.decorator';
+import { SessionInfoDto } from '../auth/dto';
 
 @Controller('account')
 @UseGuards(AuthGuard)

@@ -1,8 +1,8 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { ApiCreatedResponse } from '@nestjs/swagger';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { SessionInfoDto } from 'src/auth/dto';
-import { SessionInfo } from 'src/auth/session-info.decorator';
+import { AuthGuard } from '../auth/auth.guard';
+import { SessionInfoDto } from '../auth/dto';
+import { SessionInfo } from '../auth/session-info.decorator';
 import { BuyService } from './buy.service';
 import { BuyCourseDto } from './dto';
 

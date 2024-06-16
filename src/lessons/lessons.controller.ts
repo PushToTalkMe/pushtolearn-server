@@ -8,9 +8,9 @@ import {
 } from '@nestjs/common';
 import { LessonsService } from './lessons.service';
 import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
-import { AdminGuard } from 'src/auth/admin.guard';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { IdValidationPipe } from 'src/pipes/id-validation.pipe';
+import { AdminGuard } from '../auth/admin.guard';
+import { AuthGuard } from '../auth/auth.guard';
+import { IdValidationPipe } from '../pipes/id-validation.pipe';
 import { CreateLessonBodyDto, PatchLessonDto } from './dto';
 
 @Controller('lessons')

@@ -5,10 +5,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { CookieService } from './cookie.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { JWT_SECRET } from 'src/configs/jwt.config';
+import { JWT_SECRET } from '../configs/jwt.config';
+import { extractCookieValue } from '../helpers/extract-cookie-value';
+import { CookieService } from './cookie.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -18,7 +19,13 @@ export class AuthGuard implements CanActivate {
   ) {}
   canActivate(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest() as Request;
-    const token = req.cookies[CookieService.tokenKey];
+    const cookie = req.headers.cookie;
+
+    if (!cookie) {
+      throw new UnauthorizedException();
+    }
+
+    const token = extractCookieValue(cookie, CookieService.tokenKey);
 
     if (!token) {
       throw new UnauthorizedException();

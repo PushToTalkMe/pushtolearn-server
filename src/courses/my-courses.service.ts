@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { DbService } from 'src/db/db.service';
+import { DbService } from '../db/db.service';
 
 @Injectable()
 export class MyCoursesService {
@@ -33,6 +33,10 @@ export class MyCoursesService {
       where: { id: { in: myCoursesId } },
       orderBy: { sequence: 'asc' },
     });
+  }
+
+  async deleteMyCoursesByCourseId(courseId: number) {
+    return this.dbService.myCourse.deleteMany({ where: { courseId } });
   }
 
   async getNotMyCourses(userId: number) {

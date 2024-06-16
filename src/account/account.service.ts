@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PatchAccountDto } from './dto';
-import { DbService } from 'src/db/db.service';
+import { DbService } from '../db/db.service';
 
 @Injectable()
 export class AccountService {

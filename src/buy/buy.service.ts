@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { MyCoursesService } from 'src/courses/my-courses.service';
-import { DbService } from 'src/db/db.service';
+import { MyCoursesService } from '../courses/my-courses.service';
+import { DbService } from '../db/db.service';
 
 @Injectable()
 export class BuyService {

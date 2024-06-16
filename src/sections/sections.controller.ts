@@ -1,20 +1,17 @@
 import {
   Body,
   Controller,
-  Get,
   Param,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
-import { SessionInfoDto } from 'src/auth/dto';
-import { SessionInfo } from 'src/auth/session-info.decorator';
 import { SectionsService } from './sections.service';
 import { CreateSectionBodyDto, PatchSectionDto } from './dto';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { AdminGuard } from 'src/auth/admin.guard';
-import { IdValidationPipe } from 'src/pipes/id-validation.pipe';
+import { AuthGuard } from '../auth/auth.guard';
+import { AdminGuard } from '../auth/admin.guard';
+import { IdValidationPipe } from '../pipes/id-validation.pipe';
 
 @Controller('sections')
 @UseGuards(AuthGuard)

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DbService } from 'src/db/db.service';
+import { DbService } from '../db/db.service';
 import { CreateSectionBodyDto, PatchSectionDto } from './dto';
 import { LessonsService } from '../lessons/lessons.service';
 
@@ -21,6 +21,10 @@ export class SectionsService {
     });
   }
 
+  async delete(sectionId: number) {
+    return this.dbService.section.delete({ where: { id: sectionId } });
+  }
+
   async getSectionBySectionId(sectionId: number) {
     return this.dbService.section.findFirst({
       where: { id: sectionId },
@@ -31,6 +35,19 @@ export class SectionsService {
     return this.dbService.section.findMany({
       where: { courseId },
       orderBy: { sequence: 'asc' },
+    });
+  }
+
+  async getAllSectionsIdByCourseId(courseId: number) {
+    const sections = await this.getAllSectionsByCourseId(courseId);
+    return sections.map((section) => section.id);
+  }
+
+  async deleteAllSectionsByCourseId(courseId: number) {
+    return this.dbService.section.deleteMany({
+      where: {
+        courseId,
+      },
     });
   }
 

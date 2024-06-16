@@ -3,9 +3,14 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from '../users/users.service';
 import { PasswordService } from './password.service';
 import { JwtService } from '@nestjs/jwt';
+import {
+  ALREADY_REGISTERED_ERROR,
+  USER_NOT_FOUND_ERROR,
+  WRONG_PASSWORD_ERROR,
+} from './auth.constants';
 
 @Injectable()
 export class AuthService {
@@ -17,7 +22,7 @@ export class AuthService {
   async signUp(email: string, password: string) {
     const user = await this.usersService.findByEmail(email);
     if (user) {
-      throw new BadRequestException({ message: 'email-exists' });
+      throw new BadRequestException(ALREADY_REGISTERED_ERROR);
     }
     const salt = this.passwordService.getSalt();
     const hash = this.passwordService.getHash(password, salt);
@@ -36,13 +41,13 @@ export class AuthService {
   async signIn(email: string, password: string) {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException(USER_NOT_FOUND_ERROR);
     }
 
     const hash = this.passwordService.getHash(password, user.salt);
 
     if (hash !== user.hash) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException(WRONG_PASSWORD_ERROR);
     }
 
     const accessToken = await this.jwtService.signAsync({

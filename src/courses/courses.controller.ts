@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   NotFoundException,
   Param,
@@ -12,23 +13,29 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard } from '../auth/auth.guard';
 import {
   CreateCourseBodyDto,
   CreateCoursesBodyDtoWithOwner,
   PatchCourseDto,
 } from './dto';
 import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
-import { AccountService } from 'src/account/account.service';
-import { SessionInfo } from 'src/auth/session-info.decorator';
+import { AccountService } from '../account/account.service';
+import { SessionInfo } from '../auth/session-info.decorator';
 import { CoursesService } from './courses.service';
-import { SessionInfoDto } from 'src/auth/dto';
+import { SessionInfoDto } from '../auth/dto';
 import { MyCoursesService } from './my-courses.service';
-import { IdValidationPipe } from 'src/pipes/id-validation.pipe';
+import { IdValidationPipe } from '../pipes/id-validation.pipe';
 import { SectionsService } from '../sections/sections.service';
 import { PatchSectionDto } from '../sections/dto';
-import { AdminGuard } from 'src/auth/admin.guard';
-import { LessonsService } from 'src/lessons/lessons.service';
+import { AdminGuard } from '../auth/admin.guard';
+import { LessonsService } from '../lessons/lessons.service';
+import {
+  COURSE_NOT_FOUND,
+  LESSON_NOT_FOUND,
+  PAGE_NOT_FOUND,
+  SECTION_NOT_FOUND,
+} from './constants';
 
 @Controller('courses')
 @UseGuards(AuthGuard)
@@ -80,6 +87,18 @@ export class CoursesController {
     return this.coursesService.getAllCourses(session.id);
   }
 
+  @Delete(':courseId')
+  @UseGuards(AdminGuard)
+  @ApiOkResponse({
+    type: [CreateCoursesBodyDtoWithOwner],
+  })
+  async delete(@Param('courseId', IdValidationPipe) courseId: number) {
+    const deletedCourse = await this.coursesService.delete(courseId);
+    if (!deletedCourse) {
+      throw new NotFoundException(COURSE_NOT_FOUND);
+    }
+  }
+
   @Get('my')
   @ApiOkResponse({
     type: [CreateCoursesBodyDtoWithOwner],
@@ -118,7 +137,7 @@ export class CoursesController {
   @ApiOkResponse({
     type: CreateCoursesBodyDtoWithOwner,
   })
-  async getLessonById(
+  async getPageLesson(
     @Param('courseId', IdValidationPipe) courseId: number,
     @Param('sectionId', IdValidationPipe) sectionId: number,
     @Param('lessonId', IdValidationPipe) lessonId: number,
@@ -129,20 +148,20 @@ export class CoursesController {
       session.id,
     );
     if (!course) {
-      throw new BadRequestException({ message: 'Курса не существует' });
+      throw new BadRequestException(COURSE_NOT_FOUND);
     }
     const section = await this.sectionsService.getSectionBySectionId(sectionId);
     if (!section) {
-      throw new BadRequestException({ message: 'Раздела не существует' });
+      throw new BadRequestException(SECTION_NOT_FOUND);
     }
     const lesson = await this.lessonsService.getLessonByLessonId(lessonId);
     if (!lesson) {
-      throw new BadRequestException({ message: 'Урока не существует' });
+      throw new BadRequestException(LESSON_NOT_FOUND);
     }
     if (course.id === section.courseId && section.id === lesson.sectionId) {
       return lesson;
     } else {
-      throw new BadRequestException({ message: 'Страница не существует' });
+      throw new BadRequestException(PAGE_NOT_FOUND);
     }
   }
 }

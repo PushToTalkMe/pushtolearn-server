@@ -2,14 +2,17 @@ import {
   BadRequestException,
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { CookieService } from './cookie.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { JWT_SECRET } from 'src/configs/jwt.config';
+import { JWT_SECRET } from '../configs/jwt.config';
+import { extractCookieValue } from '../helpers/extract-cookie-value';
+import { CookieService } from './cookie.service';
+import { NOT_PERMITTED } from './admin.constants';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
@@ -19,7 +22,13 @@ export class AdminGuard implements CanActivate {
   ) {}
   async canActivate(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest() as Request;
-    const token = req.cookies[CookieService.tokenKey];
+    const cookie = req.headers.cookie;
+
+    if (!cookie) {
+      throw new UnauthorizedException();
+    }
+
+    const token = extractCookieValue(cookie, CookieService.tokenKey);
 
     if (!token) {
       throw new UnauthorizedException();
@@ -36,7 +45,7 @@ export class AdminGuard implements CanActivate {
         throw new Error();
       }
     } catch {
-      throw new BadRequestException({ message: 'Нет доступа' });
+      throw new ForbiddenException(NOT_PERMITTED);
     }
     return true;
   }
