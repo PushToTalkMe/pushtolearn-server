@@ -1,22 +1,22 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiCreatedResponse } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
 import { SessionInfoDto } from '../auth/dto';
 import { SessionInfo } from '../auth/session-info.decorator';
 import { BuyService } from './buy.service';
-import { BuyCourseDto } from './dto';
+import { IdValidationPipe } from '../pipes/id-validation.pipe';
 
 @Controller('buy')
 @UseGuards(AuthGuard)
 export class BuyController {
   constructor(private readonly buyService: BuyService) {}
 
-  @Post()
+  @Post(':courseId')
   @ApiCreatedResponse()
   async buyCourse(
-    @Body() dto: BuyCourseDto,
+    @Param('courseId', IdValidationPipe) courseId: number,
     @SessionInfo() session: SessionInfoDto,
   ) {
-    return this.buyService.buyCourse(session.id, dto.courseId);
+    return this.buyService.buyCourse(session.id, courseId);
   }
 }

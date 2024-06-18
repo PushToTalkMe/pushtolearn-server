@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
 
-export class CreateLessonBodyDto {
+export class CreateLessonDto {
   @ApiProperty({ example: 'Введение' })
   @IsString()
   title: string;
@@ -30,4 +30,30 @@ export class PatchLessonDto {
   @IsNumber()
   @IsOptional()
   sequence?: number;
+}
+
+export class LessonDto {
+  @ApiProperty({ example: '5' })
+  @IsNumber()
+  id: number;
+
+  @ApiProperty({ example: '1' })
+  @IsNumber()
+  sectionId: number;
+
+  @ApiProperty({ example: '2' })
+  @IsNumber()
+  sequence: number;
+
+  @ApiProperty({ example: 'Что такое NestJS' })
+  @IsString()
+  title: string;
+
+  @ApiProperty({ example: '## Что такое NestJS' })
+  @IsString()
+  text: string;
+
+  @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
+  @IsDate()
+  createdAt: Date;
 }

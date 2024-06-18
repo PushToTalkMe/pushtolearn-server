@@ -15,8 +15,8 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard';
 import {
-  CreateCourseBodyDto,
-  CreateCoursesBodyDtoWithOwner,
+  CreateCourseDto,
+  CreateCoursesDtoWithOwner,
   PatchCourseDto,
 } from './dto';
 import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
@@ -51,7 +51,7 @@ export class CoursesController {
   @UseGuards(AdminGuard)
   @ApiCreatedResponse()
   async create(
-    @Body() dto: CreateCourseBodyDto,
+    @Body() dto: CreateCourseDto,
     @SessionInfo() session: SessionInfoDto,
   ) {
     const { firstName, lastName } = await this.accountService.getAccount(
@@ -70,7 +70,7 @@ export class CoursesController {
   @Patch('update/:courseId')
   @UseGuards(AdminGuard)
   @ApiOkResponse({
-    type: CreateCourseBodyDto,
+    type: CreateCourseDto,
   })
   async patchCourse(
     @Param('courseId', IdValidationPipe) courseId: number,
@@ -81,16 +81,16 @@ export class CoursesController {
 
   @Get()
   @ApiOkResponse({
-    type: [CreateCoursesBodyDtoWithOwner],
+    type: [CreateCoursesDtoWithOwner],
   })
   async getAllCourses(@SessionInfo() session: SessionInfoDto) {
-    return this.coursesService.getAllCourses(session.id);
+    return this.coursesService.getAllCoursesFromNotMy(session.id);
   }
 
   @Delete(':courseId')
   @UseGuards(AdminGuard)
   @ApiOkResponse({
-    type: [CreateCoursesBodyDtoWithOwner],
+    type: [CreateCoursesDtoWithOwner],
   })
   async delete(@Param('courseId', IdValidationPipe) courseId: number) {
     const deletedCourse = await this.coursesService.delete(courseId);
@@ -101,7 +101,7 @@ export class CoursesController {
 
   @Get('my')
   @ApiOkResponse({
-    type: [CreateCoursesBodyDtoWithOwner],
+    type: [CreateCoursesDtoWithOwner],
   })
   async getMyCourses(@SessionInfo() session: SessionInfoDto) {
     return this.myCoursesService.getMyCourses(session.id);
@@ -109,13 +109,13 @@ export class CoursesController {
 
   @Get('my/:courseId')
   @ApiOkResponse({
-    type: CreateCoursesBodyDtoWithOwner,
+    type: CreateCoursesDtoWithOwner,
   })
   async getCourseById(
     @Param('courseId', IdValidationPipe) courseId: number,
     @SessionInfo() session: SessionInfoDto,
   ) {
-    const course = await this.coursesService.getCourseById(
+    const course = await this.coursesService.getCourseFromMy(
       courseId,
       session.id,
     );
@@ -135,7 +135,7 @@ export class CoursesController {
 
   @Get('/my/:courseId/sections/:sectionId/lessons/:lessonId')
   @ApiOkResponse({
-    type: CreateCoursesBodyDtoWithOwner,
+    type: CreateCoursesDtoWithOwner,
   })
   async getPageLesson(
     @Param('courseId', IdValidationPipe) courseId: number,
@@ -143,18 +143,18 @@ export class CoursesController {
     @Param('lessonId', IdValidationPipe) lessonId: number,
     @SessionInfo() session: SessionInfoDto,
   ) {
-    const course = await this.coursesService.getCourseById(
+    const course = await this.coursesService.getCourseFromMy(
       courseId,
       session.id,
     );
     if (!course) {
       throw new BadRequestException(COURSE_NOT_FOUND);
     }
-    const section = await this.sectionsService.getSectionBySectionId(sectionId);
+    const section = await this.sectionsService.getSection(sectionId);
     if (!section) {
       throw new BadRequestException(SECTION_NOT_FOUND);
     }
-    const lesson = await this.lessonsService.getLessonByLessonId(lessonId);
+    const lesson = await this.lessonsService.getLesson(lessonId);
     if (!lesson) {
       throw new BadRequestException(LESSON_NOT_FOUND);
     }

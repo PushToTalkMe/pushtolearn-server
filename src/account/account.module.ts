@@ -5,6 +5,7 @@ import { DbModule } from '../db/db.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { getJWTConfig } from '../configs/jwt.config';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
   imports: [

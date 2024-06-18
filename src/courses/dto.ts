@@ -1,7 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsDate,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import { SectionsWithLessonsTitleDto } from '../sections/dto';
+import { Type } from 'class-transformer';
 
-export class CreateCourseBodyDto {
+export class CreateCourseDto {
   @ApiProperty({ example: 'NextJS + NestJS' })
   @IsString()
   title: string;
@@ -24,8 +32,55 @@ export class CreateCourseBodyDto {
   price: number;
 }
 
-export class CreateCoursesBodyDtoWithOwner extends CreateCourseBodyDto {
+export class CreateCoursesDtoWithOwner extends CreateCourseDto {
+  @IsString()
   author: string;
+}
+
+export class CourseDto {
+  @ApiProperty({ example: 1 })
+  @IsNumber()
+  id: number;
+
+  @ApiProperty({ example: 'NextJS + NestJS' })
+  @IsString()
+  title: 'Основы JavaScript';
+
+  @ApiProperty({ example: 'Vlad Ilyin' })
+  @IsString()
+  author: ' ';
+
+  @ApiProperty({ example: 'uri' })
+  @IsString()
+  img: 'uri';
+
+  @ApiProperty({ example: '7.5 часов' })
+  @IsString()
+  duration: '7.5 часов';
+
+  @ApiProperty({ example: ['JavaScript', 'Frontend', 'Backend'] })
+  @IsArray()
+  @IsString({ each: true })
+  tags: string[];
+
+  @ApiProperty({ example: 1 })
+  @IsNumber()
+  price: number;
+
+  @ApiProperty({ example: 1 })
+  @IsNumber()
+  sequence: number;
+
+  @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
+  @IsDate()
+  createdAt: Date;
+}
+
+export class CourseDtoWithSections extends CourseDto {
+  @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
+  @IsArray()
+  @Type(() => SectionsWithLessonsTitleDto)
+  sectionsWithLessonsTitle: SectionsWithLessonsTitleDto[];
 }
 
 export class PatchCourseDto {

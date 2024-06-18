@@ -27,4 +27,9 @@ export class AccountService {
       data: { ...patch },
     });
   }
+  async deleteAccount(userId: number) {
+    return this.dbService.account.delete({
+      where: { userId },
+    });
+  }
 }

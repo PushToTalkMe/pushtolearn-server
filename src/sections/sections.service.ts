@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DbService } from '../db/db.service';
-import { CreateSectionBodyDto, PatchSectionDto } from './dto';
+import { CreateSectionDto, PatchSectionDto } from './dto';
 import { LessonsService } from '../lessons/lessons.service';
+import { SECTION_NOT_FOUND } from '../courses/constants';
 
 @Injectable()
 export class SectionsService {
@@ -10,11 +11,15 @@ export class SectionsService {
     private readonly lessonsService: LessonsService,
   ) {}
 
-  async create(dto: CreateSectionBodyDto) {
+  async create(dto: CreateSectionDto) {
     return this.dbService.section.create({ data: dto });
   }
 
   async patchSection(sectionId: number, patch: PatchSectionDto) {
+    const section = await this.getSection(sectionId);
+    if (!section) {
+      throw new NotFoundException(SECTION_NOT_FOUND);
+    }
     return this.dbService.section.update({
       where: { id: sectionId },
       data: { ...patch },
@@ -22,10 +27,17 @@ export class SectionsService {
   }
 
   async delete(sectionId: number) {
-    return this.dbService.section.delete({ where: { id: sectionId } });
+    const section = await this.getSection(sectionId);
+    if (!section) {
+      throw new NotFoundException(SECTION_NOT_FOUND);
+    }
+    return this.dbService.$transaction(async () => {
+      await this.lessonsService.deleteAllLessonsBySectionId(sectionId);
+      return this.dbService.section.delete({ where: { id: sectionId } });
+    });
   }
 
-  async getSectionBySectionId(sectionId: number) {
+  async getSection(sectionId: number) {
     return this.dbService.section.findFirst({
       where: { id: sectionId },
     });

@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DbService } from '../db/db.service';
-import { CreateCoursesBodyDtoWithOwner, PatchCourseDto } from './dto';
+import { CreateCoursesDtoWithOwner, PatchCourseDto } from './dto';
 import { MyCoursesService } from './my-courses.service';
 import {
   ANY_COURSE_NOT_PURCHASED,
@@ -23,7 +23,7 @@ export class CoursesService {
     private readonly sectionsService: SectionsService,
     private readonly lessonsService: LessonsService,
   ) {}
-  async create(dto: CreateCoursesBodyDtoWithOwner, userId: number) {
+  async create(dto: CreateCoursesDtoWithOwner, userId: number) {
     return this.dbService.$transaction(async () => {
       const course = await this.dbService.course.create({
         data: dto,
@@ -71,7 +71,7 @@ export class CoursesService {
     });
   }
 
-  async getCourseById(courseId: number, userId: number) {
+  async getCourseFromMy(courseId: number, userId: number) {
     const myCourses = await this.myCoursesService.getMyCourses(userId);
     if (!myCourses) {
       throw new BadRequestException(ANY_COURSE_NOT_PURCHASED);
@@ -83,7 +83,7 @@ export class CoursesService {
     return myCourse;
   }
 
-  async getAllCourses(userId: number) {
+  async getAllCoursesFromNotMy(userId: number) {
     const notMyCourses = this.myCoursesService.getNotMyCourses(userId);
     if (!notMyCourses) {
       throw new BadRequestException(ANY_COURSE_PURCHASED);

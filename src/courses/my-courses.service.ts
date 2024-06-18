@@ -39,6 +39,10 @@ export class MyCoursesService {
     return this.dbService.myCourse.deleteMany({ where: { courseId } });
   }
 
+  async deleteMyCoursesByUserId(userId: number) {
+    return this.dbService.myCourse.deleteMany({ where: { userId } });
+  }
+
   async getNotMyCourses(userId: number) {
     const myCoursesId = await this.getMyCoursesId(userId);
     return this.dbService.course.findMany({

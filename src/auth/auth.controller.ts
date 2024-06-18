@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -15,13 +16,16 @@ import { Response } from 'express';
 import { CookieService } from './cookie.service';
 import { AuthGuard } from './auth.guard';
 import { SessionInfo } from './session-info.decorator';
+import { UsersService } from '../users/users.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly cookieService: CookieService,
+    private readonly usersService: UsersService,
   ) {}
+
   @Post('sign-up')
   @ApiCreatedResponse()
   async signUp(
@@ -33,6 +37,17 @@ export class AuthController {
       body.password,
     );
     this.cookieService.setToken(res, accessToken);
+  }
+
+  @Delete('delete')
+  @ApiOkResponse({ type: String })
+  @UseGuards(AuthGuard)
+  async delete(
+    @Res({ passthrough: true }) res: Response,
+    @SessionInfo() session: SessionInfoDto,
+  ) {
+    this.cookieService.removeToken(res);
+    return this.usersService.delete(session.email);
   }
 
   @Post('sign-in')
