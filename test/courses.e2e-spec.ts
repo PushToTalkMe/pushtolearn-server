@@ -7,8 +7,14 @@ import { ConfigService } from '@nestjs/config';
 import {
   ADMIN_LOGIN,
   ADMIN_PASSWORD,
+  CONTENT,
+  EXERCISE,
+  QUESTIONS,
   STUDENT_LOGIN,
   STUDENT_PASSWORD,
+  TASKS,
+  TEST,
+  THEORY,
 } from './constants';
 import {
   CreateCourseDto,
@@ -47,7 +53,8 @@ const testSectionDto: CreateSectionDto = {
 
 const testLessonDto: CreateLessonDto = {
   title: 'Основы JavaScript',
-  text: '## Основы JavaScript',
+  data: { questions: QUESTIONS },
+  type: TEST,
   sectionId: 0,
 };
 
@@ -118,7 +125,7 @@ describe('CourseController, BuyController, SectionController и LessonController
       });
   });
 
-  it('/lessons/create (POST) === success (Создание урока №1 для раздела №1)', async () => {
+  it('/lessons/create (POST) === success (Создание урока №1 (типа Test) для раздела №1)', async () => {
     return request(app.getHttpServer())
       .post('/lessons/create')
       .set('Cookie', cookies)
@@ -198,12 +205,17 @@ describe('CourseController, BuyController, SectionController и LessonController
       });
   });
 
-  it('/lessons/delete/:lessonId (DELETE) === success (Создание урока №2 для разделе №1 и его последующее удаление)', async () => {
+  it('/lessons/delete/:lessonId (DELETE) === success (Создание урока №2 (типа Exercise) для разделе №1 и его последующее удаление)', async () => {
     let lessonIdForDelete: number;
     await request(app.getHttpServer())
       .post('/lessons/create')
       .set('Cookie', cookies)
-      .send({ ...testLessonDto, sectionId })
+      .send({
+        ...testLessonDto,
+        sectionId,
+        type: EXERCISE,
+        data: { tasks: TASKS },
+      })
       .expect(201)
       .then(({ body }: request.Response) => {
         lessonIdForDelete = body.id;
@@ -214,6 +226,24 @@ describe('CourseController, BuyController, SectionController и LessonController
       .delete('/lessons/delete/' + lessonIdForDelete)
       .set('Cookie', cookies)
       .expect(200);
+  });
+
+  it('/lessons/create (POST) === success (Создание урока №3 (типа Theory) для разделе №1)', async () => {
+    await request(app.getHttpServer())
+      .post('/lessons/create')
+      .set('Cookie', cookies)
+      .send({
+        ...testLessonDto,
+        sectionId,
+        type: THEORY,
+        data: { content: CONTENT },
+      })
+      .expect(201)
+      .then(({ body }: request.Response) => {
+        lessonId = body.id;
+        expect(lessonId).toBeDefined();
+        return;
+      });
   });
 
   it('/courses/create (POST) === failed, not permitted (Попытка создать курс обычным пользователем)', async () => {
@@ -304,7 +334,7 @@ describe('CourseController, BuyController, SectionController и LessonController
       .expect(200)
       .then(({ body }: request.Response) => {
         const lessonCount = body.lessonCount;
-        expect(lessonCount).toEqual(1);
+        expect(lessonCount).toEqual(2);
         return;
       });
   });

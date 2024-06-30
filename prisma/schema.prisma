@@ -25,6 +25,7 @@ model Account {
 	lastName String
 	username String
 	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
 }
 
 model MyCourse {
@@ -33,6 +34,7 @@ model MyCourse {
   user User @relation(fields: [userId], references: [id])
 	courseId Int
   course Course @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
 }
 
 model Course {
@@ -47,16 +49,18 @@ model Course {
   myCourses MyCourse[]
 	sections Section[]
   createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
 }
 
 model Section {
-  id        Int       @id @default(autoincrement())
-  title     String
-  lessons   Lesson[]
-  courseId  Int
+  id Int @id @default(autoincrement())
+  title String
+  lessons Lesson[]
+  courseId Int
 	sequence Int @default(autoincrement())
-  course    Course    @relation(fields: [courseId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
   createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
 }
 
 model Lesson {
@@ -65,6 +69,43 @@ model Lesson {
 	section Section @relation(fields: [sectionId], references: [id])
 	sequence Int @default(autoincrement())
 	title String
-	text String
+	theory Theory?
+  test Test?
+  exercise Exercise?
+	type LessonType
   createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+}
+
+model Theory {
+  id Int @id @default(autoincrement())
+  content String
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+  lessonId Int @unique
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+}
+
+model Test {
+  id Int @id @default(autoincrement())
+  questions String
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+  lessonId Int @unique
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+}
+
+model Exercise {
+  id Int @id @default(autoincrement())
+  tasks String
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+  lessonId Int @unique
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+}
+
+enum LessonType {
+  Theory 
+  Exercise
+	Test
 }

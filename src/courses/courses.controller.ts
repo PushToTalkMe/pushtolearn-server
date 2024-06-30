@@ -119,9 +119,9 @@ export class CoursesController {
       sections.map(async (section) => {
         const lessonsTitle =
           await this.sectionsService.getAllLessonsTitleBySectionId(section.id);
-        if (lessonsTitle) {
+        lessonsTitle.forEach(() => {
           lessonCount += 1;
-        }
+        });
       }),
     );
 

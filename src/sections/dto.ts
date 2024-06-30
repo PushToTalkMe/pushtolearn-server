@@ -31,49 +31,43 @@ export class PatchSectionDto {
 
 export class SectionDto {
   @ApiProperty({ example: '1' })
-  @IsNumber()
   id: number;
 
   @ApiProperty({ example: 'Введение' })
-  @IsString()
   title: string;
 
   @ApiProperty({ example: '1' })
-  @IsNumber()
   courseId: number;
 
   @ApiProperty({ example: '5' })
-  @IsNumber()
   sequence: number;
 
   @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
-  @IsDate()
   createdAt: Date;
+
+  @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
+  updatedAt: Date;
 }
 
 export class SectionsWithLessonsTitleDto {
   @ApiProperty({ example: 'Что такое NestJS' })
-  @IsArray()
-  @IsString({ each: true })
   lessonsTitle: string[];
 
   @ApiProperty({ example: '1' })
-  @IsNumber()
   id: number;
 
   @ApiProperty({ example: 'Введение' })
-  @IsString()
   title: string;
 
   @ApiProperty({ example: '2' })
-  @IsNumber()
   courseId: number;
 
   @ApiProperty({ example: '5' })
-  @IsNumber()
   sequence: number;
 
   @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
-  @IsDate()
   createdAt: Date;
+
+  @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
+  updatedAt: Date;
 }
