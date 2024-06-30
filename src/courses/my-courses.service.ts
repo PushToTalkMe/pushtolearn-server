@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { DbService } from '../db/db.service';
+import { COURSE_ALREADY_ADDED } from './constants';
 
 @Injectable()
 export class MyCoursesService {
@@ -10,7 +11,7 @@ export class MyCoursesService {
       where: { userId, courseId },
     });
     if (myCourse) {
-      throw new BadRequestException({ message: 'Данный курс уже добавлен' });
+      throw new BadRequestException(COURSE_ALREADY_ADDED);
     }
     return this.dbService.myCourse.create({
       data: {

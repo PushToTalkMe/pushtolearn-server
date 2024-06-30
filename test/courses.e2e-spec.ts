@@ -297,6 +297,18 @@ describe('CourseController, BuyController, SectionController и LessonController
       });
   });
 
+  it('/courses/notMy/:courseId (GET) === success (Проверка и получение не купленного курса перед покупкой + с количеством уроков)', async () => {
+    return request(app.getHttpServer())
+      .get('/courses/notMy/' + courseId)
+      .set('Cookie', cookies)
+      .expect(200)
+      .then(({ body }: request.Response) => {
+        const lessonCount = body.lessonCount;
+        expect(lessonCount).toEqual(1);
+        return;
+      });
+  });
+
   it('/buy/:courseId (POST) === success (Покупка курса обычным пользователем)', async () => {
     return request(app.getHttpServer())
       .post('/buy/' + courseId)

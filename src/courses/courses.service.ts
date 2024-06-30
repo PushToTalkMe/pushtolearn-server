@@ -11,6 +11,7 @@ import {
   ANY_COURSE_PURCHASED,
   COURSE_NOT_FOUND,
   COURSE_NOT_PURCHASED,
+  COURSE_PURCHASED,
 } from './constants';
 import { SectionsService } from '../sections/sections.service';
 import { LessonsService } from '../lessons/lessons.service';
@@ -81,6 +82,17 @@ export class CoursesService {
       throw new BadRequestException(COURSE_NOT_PURCHASED);
     }
     return myCourse;
+  }
+
+  async getCourseFromNotMy(courseId: number, userId: number) {
+    const notMyCourses = await this.getAllCoursesFromNotMy(userId);
+    const notMyCourse = notMyCourses.find((course) => course.id === courseId);
+    if (!notMyCourse) {
+      throw new BadRequestException(
+        COURSE_NOT_FOUND + ' или ' + COURSE_PURCHASED,
+      );
+    }
+    return notMyCourse;
   }
 
   async getAllCoursesFromNotMy(userId: number) {

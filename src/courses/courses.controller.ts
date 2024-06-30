@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard';
 import {
+  CourseDto,
   CreateCourseDto,
   CreateCoursesDtoWithOwner,
   PatchCourseDto,
@@ -27,7 +28,6 @@ import { SessionInfoDto } from '../auth/dto';
 import { MyCoursesService } from './my-courses.service';
 import { IdValidationPipe } from '../pipes/id-validation.pipe';
 import { SectionsService } from '../sections/sections.service';
-import { PatchSectionDto } from '../sections/dto';
 import { AdminGuard } from '../auth/admin.guard';
 import { LessonsService } from '../lessons/lessons.service';
 import {
@@ -36,6 +36,7 @@ import {
   PAGE_NOT_FOUND,
   SECTION_NOT_FOUND,
 } from './constants';
+import { LessonDto } from '../lessons/dto';
 
 @Controller('courses')
 @UseGuards(AuthGuard)
@@ -81,7 +82,7 @@ export class CoursesController {
 
   @Get()
   @ApiOkResponse({
-    type: [CreateCoursesDtoWithOwner],
+    type: [CourseDto],
   })
   async getAllCourses(@SessionInfo() session: SessionInfoDto) {
     return this.coursesService.getAllCoursesFromNotMy(session.id);
@@ -90,7 +91,7 @@ export class CoursesController {
   @Delete(':courseId')
   @UseGuards(AdminGuard)
   @ApiOkResponse({
-    type: [CreateCoursesDtoWithOwner],
+    type: CourseDto,
   })
   async delete(@Param('courseId', IdValidationPipe) courseId: number) {
     const deletedCourse = await this.coursesService.delete(courseId);
@@ -99,9 +100,37 @@ export class CoursesController {
     }
   }
 
+  @Get('notMy/:courseId')
+  @ApiOkResponse({
+    type: CourseDto,
+  })
+  async getNotMyCourseById(
+    @Param('courseId', IdValidationPipe) courseId: number,
+    @SessionInfo() session: SessionInfoDto,
+  ) {
+    let lessonCount = 0;
+    const course = await this.coursesService.getCourseFromNotMy(
+      courseId,
+      session.id,
+    );
+    const sections =
+      await this.sectionsService.getAllSectionsByCourseId(courseId);
+    await Promise.all(
+      sections.map(async (section) => {
+        const lessonsTitle =
+          await this.sectionsService.getAllLessonsTitleBySectionId(section.id);
+        if (lessonsTitle) {
+          lessonCount += 1;
+        }
+      }),
+    );
+
+    return { ...course, lessonCount };
+  }
+
   @Get('my')
   @ApiOkResponse({
-    type: [CreateCoursesDtoWithOwner],
+    type: [CourseDto],
   })
   async getMyCourses(@SessionInfo() session: SessionInfoDto) {
     return this.myCoursesService.getMyCourses(session.id);
@@ -109,7 +138,7 @@ export class CoursesController {
 
   @Get('my/:courseId')
   @ApiOkResponse({
-    type: CreateCoursesDtoWithOwner,
+    type: CourseDto,
   })
   async getCourseById(
     @Param('courseId', IdValidationPipe) courseId: number,
@@ -135,7 +164,7 @@ export class CoursesController {
 
   @Get('/my/:courseId/sections/:sectionId/lessons/:lessonId')
   @ApiOkResponse({
-    type: CreateCoursesDtoWithOwner,
+    type: LessonDto,
   })
   async getPageLesson(
     @Param('courseId', IdValidationPipe) courseId: number,
