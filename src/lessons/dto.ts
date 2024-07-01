@@ -79,3 +79,17 @@ export class LessonDto {
   @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
   updatedAt: Date;
 }
+
+export class LessonTitleAndType {
+  @ApiProperty({ example: 'Что такое NestJS' })
+  title: string;
+
+  @ApiProperty({
+    enum: [
+      $Enums.LessonType.Theory,
+      $Enums.LessonType.Test,
+      $Enums.LessonType.Exercise,
+    ],
+  })
+  type: $Enums.LessonType;
+}

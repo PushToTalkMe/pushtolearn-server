@@ -16,6 +16,7 @@ import {
 import { AuthGuard } from '../auth/auth.guard';
 import {
   CourseDto,
+  CourseDtoWithSections,
   CreateCourseDto,
   CreateCoursesDtoWithOwner,
   PatchCourseDto,
@@ -118,7 +119,9 @@ export class CoursesController {
     await Promise.all(
       sections.map(async (section) => {
         const lessonsTitle =
-          await this.sectionsService.getAllLessonsTitleBySectionId(section.id);
+          await this.sectionsService.getAllLessonsTitleAndTypeBySectionId(
+            section.id,
+          );
         lessonsTitle.forEach(() => {
           lessonCount += 1;
         });
@@ -138,7 +141,7 @@ export class CoursesController {
 
   @Get('my/:courseId')
   @ApiOkResponse({
-    type: CourseDto,
+    type: CourseDtoWithSections,
   })
   async getCourseById(
     @Param('courseId', IdValidationPipe) courseId: number,
@@ -151,15 +154,17 @@ export class CoursesController {
     const sections =
       await this.sectionsService.getAllSectionsByCourseId(courseId);
 
-    const sectionsWithLessonsTitle = await Promise.all(
+    const sectionsWithLessonsTitleAndType = await Promise.all(
       sections.map(async (section) => {
-        const lessonsTitle =
-          await this.sectionsService.getAllLessonsTitleBySectionId(section.id);
-        return { ...section, lessonsTitle };
+        const lessonsTitleAndType =
+          await this.sectionsService.getAllLessonsTitleAndTypeBySectionId(
+            section.id,
+          );
+        return { ...section, lessonsTitleAndType };
       }),
     );
 
-    return { ...course, sectionsWithLessonsTitle };
+    return { ...course, sectionsWithLessonsTitleAndType };
   }
 
   @Get('/my/:courseId/sections/:sectionId/lessons/:lessonId')

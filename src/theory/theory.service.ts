@@ -40,6 +40,9 @@ export class TheoryService {
   async getTheory(lessonId: number) {
     return this.dbService.theory.findFirst({
       where: { lessonId },
+      select: {
+        content: true,
+      },
     });
   }
 }

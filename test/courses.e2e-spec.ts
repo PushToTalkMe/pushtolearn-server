@@ -359,7 +359,7 @@ describe('CourseController, BuyController, SectionController и LessonController
       });
   });
 
-  it('/courses/my/:courseId (GET) === success (Просмотр купленного курса с названиями всех секций и уроков обычным пользователем)', async () => {
+  it('/courses/my/:courseId (GET) === success (Просмотр купленного курса с названиями всех секций и названиями и типами всех уроков обычным пользователем)', async () => {
     return request(app.getHttpServer())
       .get('/courses/my/' + courseId)
       .set('Cookie', cookies)
@@ -367,12 +367,13 @@ describe('CourseController, BuyController, SectionController и LessonController
       .then(({ body }: request.Response) => {
         const course: CourseDtoWithSections = body;
         expect(course.id).toEqual(courseId);
-        expect(course.sectionsWithLessonsTitle[0].title).toEqual(
+        expect(course.sectionsWithLessonsTitleAndType[0].title).toEqual(
           updatedTitleSection,
         );
-        expect(course.sectionsWithLessonsTitle[0].lessonsTitle[0]).toEqual(
-          updatedTitleLesson,
-        );
+        expect(
+          course.sectionsWithLessonsTitleAndType[0].lessonsTitleAndType[0]
+            .title,
+        ).toEqual(updatedTitleLesson);
         return;
       });
   });

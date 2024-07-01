@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { DbService } from '../db/db.service';
 import { CreateLessonDto, PatchLessonDto } from './dto';
-import { LESSON_NOT_FOUND } from '../courses/constants';
+import { LESSON_NOT_FOUND, SECTION_NOT_FOUND } from '../courses/constants';
 import { TheoryService } from '../theory/theory.service';
 import { TestService } from '../test/test.service';
 import { ExerciseService } from '../exercise/exercise.service';
@@ -22,6 +22,12 @@ export class LessonsService {
 
   async create(dto: CreateLessonDto) {
     return await this.dbService.$transaction(async () => {
+      const section = await this.dbService.section.findFirst({
+        where: { id: dto.sectionId },
+      });
+      if (!section) {
+        throw new NotFoundException(SECTION_NOT_FOUND);
+      }
       const { data, ...newDto } = dto;
       const lesson = await this.dbService.lesson.create({ data: newDto });
       let item;

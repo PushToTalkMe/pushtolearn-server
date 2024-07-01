@@ -40,6 +40,9 @@ export class ExerciseService {
   async getExercise(lessonId: number) {
     return this.dbService.exercise.findFirst({
       where: { lessonId },
+      select: {
+        tasks: true,
+      },
     });
   }
 }

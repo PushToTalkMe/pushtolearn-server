@@ -40,6 +40,9 @@ export class TestService {
   async getTest(lessonId: number) {
     return this.dbService.test.findFirst({
       where: { lessonId },
+      select: {
+        questions: true,
+      },
     });
   }
 }

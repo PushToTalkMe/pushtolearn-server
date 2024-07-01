@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { LessonTitleAndType } from '../lessons/dto';
 
 export class CreateSectionDto {
   @ApiProperty({ example: 'Введение' })
@@ -49,9 +50,15 @@ export class SectionDto {
   updatedAt: Date;
 }
 
-export class SectionsWithLessonsTitleDto {
-  @ApiProperty({ example: 'Что такое NestJS' })
-  lessonsTitle: string[];
+export class SectionsWithLessonsTitleAndTypeDto {
+  @ApiProperty({
+    example: [
+      { title: 'Введение', type: 'Theory' },
+      { title: 'Упражнение по HTML', type: 'Exercise' },
+      { title: 'Тест по HTML', type: 'Test' },
+    ],
+  })
+  lessonsTitleAndType: LessonTitleAndType[];
 
   @ApiProperty({ example: '1' })
   id: number;

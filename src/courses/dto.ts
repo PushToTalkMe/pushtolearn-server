@@ -6,7 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { SectionsWithLessonsTitleDto } from '../sections/dto';
+import { SectionsWithLessonsTitleAndTypeDto } from '../sections/dto';
 import { Type } from 'class-transformer';
 
 export class CreateCourseDto {
@@ -71,8 +71,24 @@ export class CourseDto {
 }
 
 export class CourseDtoWithSections extends CourseDto {
-  @ApiProperty()
-  sectionsWithLessonsTitle: SectionsWithLessonsTitleDto[];
+  @ApiProperty({
+    example: [
+      {
+        id: 1,
+        title: 'Введение',
+        courseId: 1,
+        sequence: 1,
+        createdAt: '2024-07-01T10:23:15.094Z',
+        updatedAt: '2024-07-01T10:23:15.094Z',
+        lessonsTitleAndType: [
+          { title: 'Введение', type: 'Theory' },
+          { title: 'Упражнение по HTML', type: 'Exercise' },
+          { title: 'Тест по HTML', type: 'Test' },
+        ],
+      },
+    ],
+  })
+  sectionsWithLessonsTitleAndType: SectionsWithLessonsTitleAndTypeDto[];
 }
 
 export class PatchCourseDto {
