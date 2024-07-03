@@ -2,21 +2,27 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { SignInBodyDto } from '../src/auth/dto';
+import { PatchUpdateRoleDto, SignInBodyDto } from '../src/auth/dto';
 import {
   ALREADY_REGISTERED_ERROR,
   WRONG_PASSWORD_ERROR,
 } from '../src/auth/auth.constants';
 import { ConfigService } from '@nestjs/config';
-import { ACCESS_TOKEN, TEST_LOGIN, TEST_PASSWORD } from './constants';
+import { ACCESS_TOKEN, ROLE, TEST_LOGIN, TEST_PASSWORD } from './constants';
 import { extractCookieValue } from '../src/helpers/extract-cookie-value';
 import { USER_DELETED } from '../src/users/constants';
+import { NOT_PERMITTED } from '../src/auth/admin.constants';
 
 const configService = new ConfigService();
 
 const signTestDto: SignInBodyDto = {
   email: configService.get(TEST_LOGIN),
   password: configService.get(TEST_PASSWORD),
+};
+
+const updateTestDto: PatchUpdateRoleDto = {
+  email: configService.get(TEST_LOGIN),
+  role: configService.get(ROLE),
 };
 
 describe('AuthController (e2e)', () => {
@@ -81,6 +87,18 @@ describe('AuthController (e2e)', () => {
         const sessionId = body.id;
         expect(sessionId).toBeDefined();
         return;
+      });
+  });
+
+  it('/auth/update (PATCH) === failed', async () => {
+    return request(app.getHttpServer())
+      .patch('/auth/update')
+      .set('Cookie', cookies)
+      .send(updateTestDto)
+      .expect(403, {
+        message: NOT_PERMITTED,
+        error: 'Forbidden',
+        statusCode: 403,
       });
   });
 

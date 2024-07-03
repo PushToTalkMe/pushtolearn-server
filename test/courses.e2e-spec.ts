@@ -25,6 +25,7 @@ import { NOT_PERMITTED } from '../src/auth/admin.constants';
 import { CreateSectionDto } from '../src/sections/dto';
 import { CreateLessonDto, LessonDto } from '../src/lessons/dto';
 import { LESSON_NOT_FOUND, SECTION_NOT_FOUND } from '../src/courses/constants';
+import { USER_DELETED } from '../src/users/constants';
 
 const configService = new ConfigService();
 
@@ -76,16 +77,27 @@ describe('CourseController, BuyController, SectionController и LessonController
 
     app = moduleFixture.createNestApplication();
     await app.init();
-  });
 
-  it('/courses/create (POST) === success (Создание курса администратором)', async () => {
     await request(app.getHttpServer())
-      .post('/auth/sign-in')
-      .send(signInAdminDto)
+      .post('/auth/sign-up')
+      .send(signInStudentDto)
+      .expect(201)
       .then(({ headers }: request.Response) => {
         cookies = headers['set-cookie'];
         return;
       });
+
+    await request(app.getHttpServer())
+      .post('/auth/sign-up')
+      .send(signInAdminDto)
+      .expect(201)
+      .then(({ headers }: request.Response) => {
+        cookies = headers['set-cookie'];
+        return;
+      });
+  });
+
+  it('/courses/create (POST) === success (Создание курса администратором)', async () => {
     return request(app.getHttpServer())
       .post('/courses/create')
       .set('Cookie', cookies)
@@ -424,5 +436,32 @@ describe('CourseController, BuyController, SectionController и LessonController
       .expect(200);
   });
 
-  afterAll(async () => await app.close());
+  afterAll(async () => {
+    await request(app.getHttpServer())
+      .delete('/auth/delete')
+      .set('Cookie', cookies)
+      .expect(200)
+      .then(({ body }: request.Response) => {
+        const message = body.message;
+        expect(message).toEqual(USER_DELETED);
+        return;
+      });
+    await request(app.getHttpServer())
+      .post('/auth/sign-in')
+      .send(signInStudentDto)
+      .then(({ headers }: request.Response) => {
+        cookies = headers['set-cookie'];
+        return;
+      });
+    await request(app.getHttpServer())
+      .delete('/auth/delete')
+      .set('Cookie', cookies)
+      .expect(200)
+      .then(({ body }: request.Response) => {
+        const message = body.message;
+        expect(message).toEqual(USER_DELETED);
+        return;
+      });
+    await app.close();
+  });
 });

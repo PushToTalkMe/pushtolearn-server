@@ -41,3 +41,11 @@ export class SessionInfoDto {
   @ApiProperty()
   'exp': number;
 }
+
+export class PatchUpdateRoleDto {
+  @ApiProperty({ example: 'student@mail.ru' })
+  email: string;
+
+  @ApiProperty({ example: 'admin' })
+  role: string;
+}

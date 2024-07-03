@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { STUDENT_LOGIN, STUDENT_PASSWORD } from './constants';
 import { PatchAccountDto } from '../src/account/dto';
 import { randomBytes } from 'crypto';
+import { USER_DELETED } from '../src/users/constants';
 
 const configService = new ConfigService();
 
@@ -38,9 +39,9 @@ describe('AccountController (e2e)', () => {
     await app.init();
 
     await request(app.getHttpServer())
-      .post('/auth/sign-in')
+      .post('/auth/sign-up')
       .send(signInStudentDto)
-      .expect(200)
+      .expect(201)
       .then(({ headers }: request.Response) => {
         cookies = headers['set-cookie'];
         return;
@@ -76,15 +77,12 @@ describe('AccountController (e2e)', () => {
 
   afterAll(async () => {
     await request(app.getHttpServer())
-      .patch('/account')
+      .delete('/auth/delete')
       .set('Cookie', cookies)
-      .send(patchAccountDtoToDefault)
       .expect(200)
       .then(({ body }: request.Response) => {
-        const { firstName, lastName, username } = body;
-        expect(firstName).toBeFalsy();
-        expect(lastName).toBeFalsy();
-        expect(username).toBeFalsy();
+        const message = body.message;
+        expect(message).toEqual(USER_DELETED);
         return;
       });
     await app.close();

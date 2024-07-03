@@ -80,6 +80,11 @@ export class LessonDto {
   updatedAt: Date;
 }
 
+export class LessonDtoWithViewed extends LessonDto {
+  @ApiProperty({ example: false })
+  viewed: boolean;
+}
+
 export class LessonTitleAndType {
   @ApiProperty({ example: 'Что такое NestJS' })
   title: string;

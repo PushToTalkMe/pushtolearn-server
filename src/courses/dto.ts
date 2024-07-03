@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
+  IsBoolean,
   IsDate,
   IsNumber,
   IsOptional,
@@ -91,6 +92,19 @@ export class CourseDtoWithSections extends CourseDto {
   sectionsWithLessonsTitleAndType: SectionsWithLessonsTitleAndTypeDto[];
 }
 
+export class CourseDtoWithLessonCount extends CourseDto {
+  @ApiProperty({ example: 5 })
+  lessonCount: number;
+}
+
+export class CourseDtoWithUserStat extends CourseDto {
+  @ApiProperty({ example: 5 })
+  lessonCount: number;
+
+  @ApiProperty({ example: 1 })
+  lessonCompleted: number;
+}
+
 export class PatchCourseDto {
   @ApiProperty({ example: 'NextJS + NestJS' })
   @IsString()
@@ -122,4 +136,27 @@ export class PatchCourseDto {
   @IsNumber()
   @IsOptional()
   sequence?: number;
+}
+
+export class PatchMyCourseStatDto {
+  @ApiProperty({ example: 1 })
+  @IsNumber()
+  @IsOptional()
+  historySectionId?: number;
+
+  @ApiProperty({ example: 1 })
+  @IsNumber()
+  @IsOptional()
+  historyLessonId?: number;
+}
+
+export class CreateUserStatLessonDto {
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  @IsOptional()
+  viewed: boolean;
+
+  @ApiProperty({ example: 1 })
+  @IsNumber()
+  lessonId: number;
 }

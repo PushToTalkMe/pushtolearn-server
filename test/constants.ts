@@ -12,3 +12,4 @@ export const THEORY = 'Theory';
 export const QUESTIONS = `## Данные для урока типа ${TEST}`;
 export const CONTENT = `## Данные для урока типа ${THEORY}`;
 export const TASKS = `## Данные для урока типа ${EXERCISE}`;
+export const ROLE = 'student';

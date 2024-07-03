@@ -5,18 +5,25 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
-import { SessionInfoDto, SignInBodyDto, SignUpBodyDto } from './dto';
+import {
+  PatchUpdateRoleDto,
+  SessionInfoDto,
+  SignInBodyDto,
+  SignUpBodyDto,
+} from './dto';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { CookieService } from './cookie.service';
 import { AuthGuard } from './auth.guard';
 import { SessionInfo } from './session-info.decorator';
 import { UsersService } from '../users/users.service';
+import { AdminGuard } from './admin.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -37,6 +44,14 @@ export class AuthController {
       body.password,
     );
     this.cookieService.setToken(res, accessToken);
+  }
+
+  @Patch('update')
+  @ApiOkResponse()
+  @UseGuards(AuthGuard)
+  @UseGuards(AdminGuard)
+  async updateRole(@Body() patch: PatchUpdateRoleDto) {
+    return this.usersService.update(patch.email, patch.role);
   }
 
   @Delete('delete')

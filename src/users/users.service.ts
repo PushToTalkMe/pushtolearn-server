@@ -25,6 +25,14 @@ export class UsersService {
     });
   }
 
+  async update(email: string, role: string) {
+    const user = await this.dbService.user.update({
+      where: { email },
+      data: { role },
+    });
+    return user.role;
+  }
+
   async delete(email: string) {
     const user = await this.findByEmail(email);
     if (!user) {
@@ -33,6 +41,9 @@ export class UsersService {
     return this.dbService.$transaction(async () => {
       await this.accountService.deleteAccount(user.id);
       await this.myCoursesService.deleteMyCoursesByUserId(user.id);
+      await this.dbService.userStatLesson.deleteMany({
+        where: { userId: user.id },
+      });
       await this.dbService.user.delete({ where: { id: user.id } });
       return { message: USER_DELETED };
     });

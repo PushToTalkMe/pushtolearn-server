@@ -128,6 +128,7 @@ export class LessonsService {
         default:
           throw new BadRequestException(LESSON_TYPE_INVALID);
       }
+      await this.dbService.userStatLesson.deleteMany({ where: { lessonId } });
       return this.dbService.lesson.delete({ where: { id: lessonId } });
     });
   }
@@ -143,6 +144,9 @@ export class LessonsService {
     const lessons = await this.getAllLessonsBySectionId(sectionId);
     await Promise.all(
       lessons.map(async (lesson) => {
+        await this.dbService.userStatLesson.deleteMany({
+          where: { lessonId: lesson.id },
+        });
         switch (lesson.type) {
           case THEORY:
             await this.theoryService.delete(lesson.id);
