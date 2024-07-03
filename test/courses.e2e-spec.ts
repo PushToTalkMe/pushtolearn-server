@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { SignInBodyDto } from '../src/auth/dto';
+import { SignInBodyDto, SignUpBodyDto } from '../src/auth/dto';
 import { ConfigService } from '@nestjs/config';
 import {
   ADMIN_LOGIN,
@@ -26,6 +26,7 @@ import { CreateSectionDto } from '../src/sections/dto';
 import { CreateLessonDto, LessonDto } from '../src/lessons/dto';
 import { LESSON_NOT_FOUND, SECTION_NOT_FOUND } from '../src/courses/constants';
 import { USER_DELETED } from '../src/users/constants';
+import { randomBytes } from 'crypto';
 
 const configService = new ConfigService();
 
@@ -34,9 +35,23 @@ const signInAdminDto: SignInBodyDto = {
   password: configService.get(ADMIN_PASSWORD),
 };
 
+const signUpAdminDto: SignUpBodyDto = {
+  email: configService.get(ADMIN_LOGIN),
+  password: configService.get(ADMIN_PASSWORD),
+  firstName: randomBytes(4).toString('hex'),
+  lastName: randomBytes(4).toString('hex'),
+};
+
 const signInStudentDto: SignInBodyDto = {
   email: configService.get(STUDENT_LOGIN),
   password: configService.get(STUDENT_PASSWORD),
+};
+
+const signUpStudentDto: SignUpBodyDto = {
+  email: configService.get(STUDENT_LOGIN),
+  password: configService.get(STUDENT_PASSWORD),
+  firstName: randomBytes(4).toString('hex'),
+  lastName: randomBytes(4).toString('hex'),
 };
 
 const testCourseDto: CreateCourseDto = {
@@ -80,7 +95,7 @@ describe('CourseController, BuyController, SectionController и LessonController
 
     await request(app.getHttpServer())
       .post('/auth/sign-up')
-      .send(signInStudentDto)
+      .send(signUpStudentDto)
       .expect(201)
       .then(({ headers }: request.Response) => {
         cookies = headers['set-cookie'];
@@ -89,7 +104,7 @@ describe('CourseController, BuyController, SectionController и LessonController
 
     await request(app.getHttpServer())
       .post('/auth/sign-up')
-      .send(signInAdminDto)
+      .send(signUpAdminDto)
       .expect(201)
       .then(({ headers }: request.Response) => {
         cookies = headers['set-cookie'];

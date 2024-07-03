@@ -42,6 +42,8 @@ export class AuthController {
     const { accessToken } = await this.authService.signUp(
       body.email,
       body.password,
+      body.firstName,
+      body.lastName,
     );
     this.cookieService.setToken(res, accessToken);
   }

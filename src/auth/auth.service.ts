@@ -21,7 +21,12 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
-  async signUp(email: string, password: string) {
+  async signUp(
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+  ) {
     const user = await this.usersService.findByEmail(email);
     if (user) {
       throw new BadRequestException(ALREADY_REGISTERED_ERROR);
@@ -34,7 +39,14 @@ export class AuthService {
     let role = '';
     admin === email || iva === email ? (role = 'admin') : (role = 'student');
 
-    const newUser = await this.usersService.create(email, hash, salt, role);
+    const newUser = await this.usersService.create(
+      email,
+      hash,
+      salt,
+      role,
+      firstName,
+      lastName,
+    );
 
     const accessToken = await this.jwtService.signAsync({
       id: newUser.id,

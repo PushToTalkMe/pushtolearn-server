@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { SignInBodyDto } from '../src/auth/dto';
+import { SignInBodyDto, SignUpBodyDto } from '../src/auth/dto';
 import { ConfigService } from '@nestjs/config';
 import { STUDENT_LOGIN, STUDENT_PASSWORD } from './constants';
 import { PatchAccountDto } from '../src/account/dto';
@@ -16,14 +16,16 @@ const signInStudentDto: SignInBodyDto = {
   password: configService.get(STUDENT_PASSWORD),
 };
 
-const patchAccountDto: PatchAccountDto = {
+const signUpStudentDto: SignUpBodyDto = {
+  email: configService.get(STUDENT_LOGIN),
+  password: configService.get(STUDENT_PASSWORD),
   firstName: randomBytes(4).toString('hex'),
   lastName: randomBytes(4).toString('hex'),
 };
 
-const patchAccountDtoToDefault: PatchAccountDto = {
-  firstName: '',
-  lastName: '',
+const patchAccountDto: PatchAccountDto = {
+  firstName: randomBytes(4).toString('hex'),
+  lastName: randomBytes(4).toString('hex'),
 };
 
 describe('AccountController (e2e)', () => {
@@ -40,7 +42,7 @@ describe('AccountController (e2e)', () => {
 
     await request(app.getHttpServer())
       .post('/auth/sign-up')
-      .send(signInStudentDto)
+      .send(signUpStudentDto)
       .expect(201)
       .then(({ headers }: request.Response) => {
         cookies = headers['set-cookie'];
