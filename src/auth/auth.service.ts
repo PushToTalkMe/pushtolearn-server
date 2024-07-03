@@ -35,7 +35,7 @@ export class AuthService {
     const hash = this.passwordService.getHash(password, salt);
 
     const admin = this.configService.get('ADMIN_LOGIN');
-    const iva = this.configService.get('VIA_LOGIN');
+    const iva = this.configService.get('IVA_LOGIN');
     let role = '';
     admin === email || iva === email ? (role = 'admin') : (role = 'student');
 
