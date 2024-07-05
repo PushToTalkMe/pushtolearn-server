@@ -138,9 +138,7 @@ export class CoursesController {
     await Promise.all(
       sections.map(async (section) => {
         const lessonsTitle =
-          await this.sectionsService.getAllLessonsTitleAndTypeBySectionId(
-            section.id,
-          );
+          await this.sectionsService.getAllSectionsWithLessons(section.id);
         lessonsTitle.forEach(() => {
           lessonCount += 1;
         });
@@ -165,9 +163,7 @@ export class CoursesController {
         await Promise.all(
           sections.map(async (section) => {
             const lessonsTitleAndType =
-              await this.sectionsService.getAllLessonsTitleAndTypeBySectionId(
-                section.id,
-              );
+              await this.sectionsService.getAllSectionsWithLessons(section.id);
             lessonsTitleAndType.forEach(() => {
               lessonCount += 1;
             });
@@ -197,8 +193,9 @@ export class CoursesController {
     const sectionsWithLessonsTitleAndType = await Promise.all(
       sections.map(async (section) => {
         const lessonsTitleAndType =
-          await this.sectionsService.getAllLessonsTitleAndTypeBySectionId(
+          await this.sectionsService.getAllLessonsTitleAndTypeAndViewedBySectionId(
             section.id,
+            session.id,
           );
         lessonsTitleAndType.forEach(() => {
           lessonCount += 1;

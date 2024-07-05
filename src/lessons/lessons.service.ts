@@ -29,7 +29,18 @@ export class LessonsService {
         throw new NotFoundException(SECTION_NOT_FOUND);
       }
       const { data, ...newDto } = dto;
-      const lesson = await this.dbService.lesson.create({ data: newDto });
+
+      const maxSequence = await this.dbService.lesson.findMany({
+        where: { sectionId: section.id },
+        orderBy: { sequence: 'desc' },
+        take: 1,
+      });
+      const nextSequence =
+        maxSequence.length > 0 ? maxSequence[0].sequence + 1 : 1;
+
+      const lesson = await this.dbService.lesson.create({
+        data: { ...newDto, sequence: nextSequence },
+      });
       let item;
       switch (lesson.type) {
         case THEORY:

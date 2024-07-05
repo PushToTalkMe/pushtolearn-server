@@ -33,11 +33,13 @@ export class MyCoursesService {
     if (!firstSectionId) {
       throw new BadRequestException(SECTION_NOT_FOUND);
     }
-    const lessons = await this.dbService.lesson.findMany({
+    const lessonsFirstSection = await this.dbService.lesson.findMany({
       where: { sectionId: firstSectionId },
       orderBy: { sequence: 'asc' },
     });
-    const firstLessonId = lessons[0] ? lessons[0].id : null;
+    const firstLessonId = lessonsFirstSection[0]
+      ? lessonsFirstSection[0].id
+      : null;
     if (!firstLessonId) {
       throw new BadRequestException(LESSON_NOT_FOUND);
     }
@@ -48,8 +50,14 @@ export class MyCoursesService {
       throw new BadRequestException(COURSE_ALREADY_ADDED);
     }
     await Promise.all(
-      lessons.map(async (lesson) => {
-        await this.createUserStatLesson(userId, lesson.id);
+      sections.map(async (section) => {
+        const lessons = await this.dbService.lesson.findMany({
+          where: { sectionId: section.id },
+          orderBy: { sequence: 'asc' },
+        });
+        lessons.map(async (lesson) => {
+          await this.createUserStatLesson(userId, lesson.id);
+        });
       }),
     );
     return this.dbService.myCourse.create({
@@ -113,7 +121,7 @@ export class MyCoursesService {
     const myCoursesId = await this.getMyCoursesId(userId);
     const courses = await this.dbService.course.findMany({
       where: { id: { in: myCoursesId } },
-      orderBy: { sequence: 'asc' },
+      orderBy: { id: 'asc' },
     });
     const coursesWithUserStat = await Promise.all(
       courses.map(async (course) => {
@@ -143,7 +151,7 @@ export class MyCoursesService {
     const myCoursesId = await this.getMyCoursesId(userId);
     return this.dbService.course.findMany({
       where: { id: { notIn: myCoursesId } },
-      orderBy: { sequence: 'asc' },
+      orderBy: { id: 'asc' },
     });
   }
 }

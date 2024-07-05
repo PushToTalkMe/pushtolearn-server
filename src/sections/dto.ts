@@ -53,10 +53,11 @@ export class SectionDto {
 export class SectionsWithLessonsTitleAndTypeDto {
   @ApiProperty({
     example: [
-      { title: 'Введение', type: 'Theory' },
-      { title: 'Упражнение по HTML', type: 'Exercise' },
-      { title: 'Тест по HTML', type: 'Test' },
+      { title: 'Введение', type: 'Theory', viewed: true },
+      { title: 'Упражнение по HTML', type: 'Exercise', viewed: false },
+      { title: 'Тест по HTML', type: 'Test', viewed: false },
     ],
+    type: [LessonTitleAndType],
   })
   lessonsTitleAndType: LessonTitleAndType[];
 

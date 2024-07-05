@@ -97,4 +97,7 @@ export class LessonTitleAndType {
     ],
   })
   type: $Enums.LessonType;
+
+  @ApiProperty({ example: true })
+  viewed: boolean;
 }

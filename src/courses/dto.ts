@@ -23,7 +23,10 @@ export class CreateCourseDto {
   @IsString()
   duration: string;
 
-  @ApiProperty({ example: ['Frontend', 'Backend', 'Fullstack'] })
+  @ApiProperty({
+    example: ['Frontend', 'Backend', 'Fullstack'],
+    type: [String],
+  })
   @IsArray()
   @IsString({ each: true })
   tags: string[];
@@ -55,7 +58,10 @@ export class CourseDto {
   @ApiProperty({ example: '7.5 часов' })
   duration: '7.5 часов';
 
-  @ApiProperty({ example: ['JavaScript', 'Frontend', 'Backend'] })
+  @ApiProperty({
+    example: ['JavaScript', 'Frontend', 'Backend'],
+    type: [String],
+  })
   tags: string[];
 
   @ApiProperty({ example: 1 })
@@ -82,12 +88,13 @@ export class CourseDtoWithSections extends CourseDto {
         createdAt: '2024-07-01T10:23:15.094Z',
         updatedAt: '2024-07-01T10:23:15.094Z',
         lessonsTitleAndType: [
-          { title: 'Введение', type: 'Theory' },
-          { title: 'Упражнение по HTML', type: 'Exercise' },
-          { title: 'Тест по HTML', type: 'Test' },
+          { title: 'Введение', type: 'Theory', viewed: true },
+          { title: 'Упражнение по HTML', type: 'Exercise', viewed: false },
+          { title: 'Тест по HTML', type: 'Test', viewed: false },
         ],
       },
     ],
+    type: [SectionsWithLessonsTitleAndTypeDto],
   })
   sectionsWithLessonsTitleAndType: SectionsWithLessonsTitleAndTypeDto[];
 }
@@ -103,6 +110,12 @@ export class CourseDtoWithUserStat extends CourseDto {
 
   @ApiProperty({ example: 1 })
   lessonCompleted: number;
+
+  @ApiProperty({ example: 1 })
+  historySectionId?: number;
+
+  @ApiProperty({ example: 1 })
+  historyLessonId?: number;
 }
 
 export class PatchCourseDto {

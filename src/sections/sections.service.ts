@@ -18,7 +18,17 @@ export class SectionsService {
     if (!course) {
       throw new NotFoundException(COURSE_NOT_FOUND);
     }
-    return this.dbService.section.create({ data: dto });
+    const maxSequence = await this.dbService.section.findMany({
+      where: { courseId: course.id },
+      orderBy: { sequence: 'desc' },
+      take: 1,
+    });
+
+    const nextSequence =
+      maxSequence.length > 0 ? maxSequence[0].sequence + 1 : 1;
+    return this.dbService.section.create({
+      data: { ...dto, sequence: nextSequence },
+    });
   }
 
   async patchSection(sectionId: number, patch: PatchSectionDto) {
@@ -69,10 +79,27 @@ export class SectionsService {
     });
   }
 
-  async getAllLessonsTitleAndTypeBySectionId(sectionId: number) {
+  async getAllLessonsTitleAndTypeAndViewedBySectionId(
+    sectionId: number,
+    userId: number,
+  ) {
     const lessons =
       await this.lessonsService.getAllLessonsBySectionId(sectionId);
-    const lessonsTitleAndType = lessons.map((lesson) => {
+    const lessonsTitleAndTypeAndViewed = await Promise.all(
+      lessons.map(async (lesson) => {
+        const { viewed } = await this.dbService.userStatLesson.findFirst({
+          where: { lessonId: lesson.id, userId },
+        });
+        return { title: lesson.title, type: lesson.type, viewed };
+      }),
+    );
+    return lessonsTitleAndTypeAndViewed;
+  }
+
+  async getAllSectionsWithLessons(sectionId: number) {
+    const lessons =
+      await this.lessonsService.getAllLessonsBySectionId(sectionId);
+    const lessonsTitleAndType = lessons.map(async (lesson) => {
       return { title: lesson.title, type: lesson.type };
     });
     return lessonsTitleAndType;
