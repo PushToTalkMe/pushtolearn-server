@@ -5,12 +5,12 @@ import { DbService } from '../db/db.service';
 @Injectable()
 export class AccountService {
   constructor(private readonly dbService: DbService) {}
-  async create(userId: number) {
+  async create(userId: number, firstName: string, lastName: string) {
     return this.dbService.account.create({
       data: {
-        userId: userId,
-        firstName: '',
-        lastName: '',
+        userId,
+        firstName,
+        lastName,
         username: '',
       },
     });

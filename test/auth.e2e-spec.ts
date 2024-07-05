@@ -2,21 +2,39 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { SignInBodyDto } from '../src/auth/dto';
+import {
+  PatchUpdateRoleDto,
+  SignInBodyDto,
+  SignUpBodyDto,
+} from '../src/auth/dto';
 import {
   ALREADY_REGISTERED_ERROR,
   WRONG_PASSWORD_ERROR,
 } from '../src/auth/auth.constants';
 import { ConfigService } from '@nestjs/config';
-import { ACCESS_TOKEN, TEST_LOGIN, TEST_PASSWORD } from './constants';
+import { ACCESS_TOKEN, ROLE, TEST_LOGIN, TEST_PASSWORD } from './constants';
 import { extractCookieValue } from '../src/helpers/extract-cookie-value';
 import { USER_DELETED } from '../src/users/constants';
+import { NOT_PERMITTED } from '../src/auth/admin.constants';
+import { randomBytes } from 'crypto';
 
 const configService = new ConfigService();
 
-const signTestDto: SignInBodyDto = {
+const signInTestDto: SignInBodyDto = {
   email: configService.get(TEST_LOGIN),
   password: configService.get(TEST_PASSWORD),
+};
+
+const signUpTestDto: SignUpBodyDto = {
+  email: configService.get(TEST_LOGIN),
+  password: configService.get(TEST_PASSWORD),
+  firstName: randomBytes(4).toString('hex'),
+  lastName: randomBytes(4).toString('hex'),
+};
+
+const updateTestDto: PatchUpdateRoleDto = {
+  email: configService.get(TEST_LOGIN),
+  role: configService.get(ROLE),
 };
 
 describe('AuthController (e2e)', () => {
@@ -36,7 +54,7 @@ describe('AuthController (e2e)', () => {
   it('/auth/sign-up (POST) === success', async () => {
     return request(app.getHttpServer())
       .post('/auth/sign-up')
-      .send(signTestDto)
+      .send(signUpTestDto)
       .expect(201)
       .then(({ headers }: request.Response) => {
         cookies = headers['set-cookie'];
@@ -62,7 +80,7 @@ describe('AuthController (e2e)', () => {
   it('/auth/sign-in (POST) === success', async () => {
     return request(app.getHttpServer())
       .post('/auth/sign-in')
-      .send(signTestDto)
+      .send(signInTestDto)
       .expect(200)
       .then(({ headers }: request.Response) => {
         cookies = headers['set-cookie'];
@@ -84,10 +102,22 @@ describe('AuthController (e2e)', () => {
       });
   });
 
+  it('/auth/update (PATCH) === failed', async () => {
+    return request(app.getHttpServer())
+      .patch('/auth/update')
+      .set('Cookie', cookies)
+      .send(updateTestDto)
+      .expect(403, {
+        message: NOT_PERMITTED,
+        error: 'Forbidden',
+        statusCode: 403,
+      });
+  });
+
   it('/auth/sign-in (POST) === failed, wrong password', async () => {
     return request(app.getHttpServer())
       .post('/auth/sign-in')
-      .send({ ...signTestDto, password: '2' })
+      .send({ ...signInTestDto, password: '2' })
       .expect(401, {
         message: WRONG_PASSWORD_ERROR,
         error: 'Unauthorized',
@@ -98,7 +128,7 @@ describe('AuthController (e2e)', () => {
   it('/auth/sign-up (POST) === failed, email existed', async () => {
     return request(app.getHttpServer())
       .post('/auth/sign-up')
-      .send(signTestDto)
+      .send(signInTestDto)
       .expect(400, {
         message: ALREADY_REGISTERED_ERROR,
         error: 'Bad Request',

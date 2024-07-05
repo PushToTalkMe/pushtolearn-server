@@ -11,6 +11,7 @@ import {
   USER_NOT_FOUND_ERROR,
   WRONG_PASSWORD_ERROR,
 } from './auth.constants';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -18,8 +19,14 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly passwordService: PasswordService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
-  async signUp(email: string, password: string) {
+  async signUp(
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+  ) {
     const user = await this.usersService.findByEmail(email);
     if (user) {
       throw new BadRequestException(ALREADY_REGISTERED_ERROR);
@@ -27,9 +34,19 @@ export class AuthService {
     const salt = this.passwordService.getSalt();
     const hash = this.passwordService.getHash(password, salt);
 
-    const role = 'student';
+    const admin = this.configService.get('ADMIN_LOGIN');
+    const iva = this.configService.get('IVA_LOGIN');
+    let role = '';
+    admin === email || iva === email ? (role = 'admin') : (role = 'student');
 
-    const newUser = await this.usersService.create(email, hash, salt, role);
+    const newUser = await this.usersService.create(
+      email,
+      hash,
+      salt,
+      role,
+      firstName,
+      lastName,
+    );
 
     const accessToken = await this.jwtService.signAsync({
       id: newUser.id,

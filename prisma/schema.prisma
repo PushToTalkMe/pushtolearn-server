@@ -15,6 +15,7 @@ model User {
 	role String
 	account Account?
   myCourses MyCourse[]
+  userStatLesson UserStatLesson[]
 }
 
 model Account {
@@ -25,6 +26,7 @@ model Account {
 	lastName String
 	username String
 	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
 }
 
 model MyCourse {
@@ -33,6 +35,19 @@ model MyCourse {
   user User @relation(fields: [userId], references: [id])
 	courseId Int
   course Course @relation(fields: [courseId], references: [id])
+  lessonCompleted Int
+  historySectionId Int
+  historyLessonId Int
+  createdAt DateTime @default(now())
+}
+
+model UserStatLesson {
+  id Int @id @default(autoincrement())
+  viewed Boolean
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+  lessonId Int
+  lesson Lesson @relation(fields: [lessonId], references: [id])
 }
 
 model Course {
@@ -43,28 +58,58 @@ model Course {
 	duration String
 	tags String[]
 	price Int
-	sequence Int @default(autoincrement())
   myCourses MyCourse[]
 	sections Section[]
   createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
 }
 
 model Section {
-  id        Int       @id @default(autoincrement())
-  title     String
-  lessons   Lesson[]
-  courseId  Int
-	sequence Int @default(autoincrement())
-  course    Course    @relation(fields: [courseId], references: [id])
+  id Int @id @default(autoincrement())
+  title String
+  lessons Lesson[]
+  courseId Int
+  sequence Int
+  course Course @relation(fields: [courseId], references: [id])
   createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
 }
 
 model Lesson {
 	id Int @id @default(autoincrement())
 	sectionId Int
 	section Section @relation(fields: [sectionId], references: [id])
-	sequence Int @default(autoincrement())
 	title String
-	text String
+  sequence Int
+	theory Theory?
+  test Test?
+  exercise Exercise?
+  userStatLesson UserStatLesson[]
+	type LessonType
   createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+}
+
+model Theory {
+  content String
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+  lessonId Int @unique
+}
+
+model Test {
+  questions String
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+  lessonId Int @unique
+}
+
+model Exercise {
+  tasks String
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+  lessonId Int @unique
+}
+
+enum LessonType {
+  Theory 
+  Exercise
+	Test
 }
