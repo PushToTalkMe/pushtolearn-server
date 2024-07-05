@@ -27,7 +27,7 @@ export class CreateLessonDto {
   ])
   type: $Enums.LessonType;
 
-  @ApiProperty({ example: '1' })
+  @ApiProperty({ example: 5 })
   @IsNumber()
   sectionId: number;
 }
@@ -42,20 +42,20 @@ export class PatchLessonDto {
   @IsOptional()
   data?: PatchTestDto & PatchExerciseDto & PatchTheoryDto;
 
-  @ApiProperty({ example: '5' })
+  @ApiProperty({ example: 1 })
   @IsNumber()
   @IsOptional()
   sequence?: number;
 }
 
 export class LessonDto {
-  @ApiProperty({ example: '5' })
+  @ApiProperty({ example: 5 })
   id: number;
 
-  @ApiProperty({ example: '1' })
+  @ApiProperty({ example: 1 })
   sectionId: number;
 
-  @ApiProperty({ example: '2' })
+  @ApiProperty({ example: 2 })
   sequence: number;
 
   @ApiProperty({ example: 'Что такое NestJS' })
@@ -85,7 +85,10 @@ export class LessonDtoWithViewed extends LessonDto {
   viewed: boolean;
 }
 
-export class LessonTitleAndType {
+export class LessonStat {
+  @ApiProperty({ example: 5 })
+  id: number;
+
   @ApiProperty({ example: 'Что такое NestJS' })
   title: string;
 
@@ -100,4 +103,7 @@ export class LessonTitleAndType {
 
   @ApiProperty({ example: true })
   viewed: boolean;
+
+  @ApiProperty({ example: 1 })
+  sequence: number;
 }

@@ -162,9 +162,9 @@ export class CoursesController {
         );
         await Promise.all(
           sections.map(async (section) => {
-            const lessonsTitleAndType =
+            const lessonsStat =
               await this.sectionsService.getAllSectionsWithLessons(section.id);
-            lessonsTitleAndType.forEach(() => {
+            lessonsStat.forEach(() => {
               lessonCount += 1;
             });
           }),
@@ -190,21 +190,21 @@ export class CoursesController {
     let lessonCount = 0;
     const sections =
       await this.sectionsService.getAllSectionsByCourseId(courseId);
-    const sectionsWithLessonsTitleAndType = await Promise.all(
+    const sectionsWithLessonsStat = await Promise.all(
       sections.map(async (section) => {
-        const lessonsTitleAndType =
-          await this.sectionsService.getAllLessonsTitleAndTypeAndViewedBySectionId(
+        const lessonsStat =
+          await this.sectionsService.getAllLessonsStatBySectionId(
             section.id,
             session.id,
           );
-        lessonsTitleAndType.forEach(() => {
+        lessonsStat.forEach(() => {
           lessonCount += 1;
         });
-        return { ...section, lessonsTitleAndType };
+        return { ...section, lessonsStat };
       }),
     );
 
-    return { ...course, sectionsWithLessonsTitleAndType, lessonCount };
+    return { ...course, sectionsWithLessonsStat, lessonCount };
   }
 
   @Get('/my/:courseId/sections/:sectionId/lessons/:lessonId')

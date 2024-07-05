@@ -6,7 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { LessonTitleAndType } from '../lessons/dto';
+import { LessonStat } from '../lessons/dto';
 
 export class CreateSectionDto {
   @ApiProperty({ example: 'Введение' })
@@ -50,16 +50,28 @@ export class SectionDto {
   updatedAt: Date;
 }
 
-export class SectionsWithLessonsTitleAndTypeDto {
+export class SectionsWithLessonsStatDto {
   @ApiProperty({
     example: [
-      { title: 'Введение', type: 'Theory', viewed: true },
-      { title: 'Упражнение по HTML', type: 'Exercise', viewed: false },
-      { title: 'Тест по HTML', type: 'Test', viewed: false },
+      { id: 1, title: 'Введение', type: 'Theory', viewed: true, sequence: 1 },
+      {
+        id: 2,
+        title: 'Упражнение по HTML',
+        type: 'Exercise',
+        viewed: false,
+        sequence: 2,
+      },
+      {
+        id: 3,
+        title: 'Тест по HTML',
+        type: 'Test',
+        viewed: false,
+        sequence: 3,
+      },
     ],
-    type: [LessonTitleAndType],
+    type: [LessonStat],
   })
-  lessonsTitleAndType: LessonTitleAndType[];
+  lessonsStat: LessonStat[];
 
   @ApiProperty({ example: '1' })
   id: number;

@@ -79,21 +79,24 @@ export class SectionsService {
     });
   }
 
-  async getAllLessonsTitleAndTypeAndViewedBySectionId(
-    sectionId: number,
-    userId: number,
-  ) {
+  async getAllLessonsStatBySectionId(sectionId: number, userId: number) {
     const lessons =
       await this.lessonsService.getAllLessonsBySectionId(sectionId);
-    const lessonsTitleAndTypeAndViewed = await Promise.all(
+    const lessonsStat = await Promise.all(
       lessons.map(async (lesson) => {
         const { viewed } = await this.dbService.userStatLesson.findFirst({
           where: { lessonId: lesson.id, userId },
         });
-        return { title: lesson.title, type: lesson.type, viewed };
+        return {
+          id: lesson.id,
+          title: lesson.title,
+          type: lesson.type,
+          viewed,
+          sequence: lesson.sequence,
+        };
       }),
     );
-    return lessonsTitleAndTypeAndViewed;
+    return lessonsStat;
   }
 
   async getAllSectionsWithLessons(sectionId: number) {
