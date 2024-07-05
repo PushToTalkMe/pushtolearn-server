@@ -394,13 +394,12 @@ describe('CourseController, BuyController, SectionController и LessonController
       .then(({ body }: request.Response) => {
         const course: CourseDtoWithSections = body;
         expect(course.id).toEqual(courseId);
-        expect(course.sectionsWithLessonsTitleAndType[0].title).toEqual(
+        expect(course.sectionsWithLessonsStat[0].title).toEqual(
           updatedTitleSection,
         );
-        expect(
-          course.sectionsWithLessonsTitleAndType[0].lessonsTitleAndType[0]
-            .title,
-        ).toEqual(updatedTitleLesson);
+        expect(course.sectionsWithLessonsStat[0].lessonsStat[0].title).toEqual(
+          updatedTitleLesson,
+        );
         return;
       });
   });
