@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { $Enums } from '@prisma/client';
 import { IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
 import { ExerciseDto, PatchExerciseDto } from '../exercise/dto';
@@ -32,13 +32,21 @@ export class CreateLessonDto {
   sectionId: number;
 }
 
+@ApiExtraModels(TheoryDto, TestDto, ExerciseDto)
 export class PatchLessonDto {
   @ApiProperty({ example: 'Введение' })
   @IsString()
   @IsOptional()
   title?: string;
 
-  @ApiProperty({ example: { content: '##Введение' } })
+  @ApiProperty({
+    example: { content: '##Введение' },
+    oneOf: [
+      { $ref: getSchemaPath(TheoryDto) },
+      { $ref: getSchemaPath(TestDto) },
+      { $ref: getSchemaPath(ExerciseDto) },
+    ],
+  })
   @IsOptional()
   data?: PatchTestDto & PatchExerciseDto & PatchTheoryDto;
 
@@ -48,6 +56,7 @@ export class PatchLessonDto {
   sequence?: number;
 }
 
+@ApiExtraModels(TheoryDto, TestDto, ExerciseDto)
 export class LessonDto {
   @ApiProperty({ example: 5 })
   id: number;
@@ -61,8 +70,17 @@ export class LessonDto {
   @ApiProperty({ example: 'Что такое NestJS' })
   title: string;
 
-  @ApiProperty({ example: { content: '##Введение' } })
-  data: TestDto & ExerciseDto & TheoryDto;
+  @ApiProperty({
+    example: {
+      content: '##Введение',
+    },
+    oneOf: [
+      { $ref: getSchemaPath(TheoryDto) },
+      { $ref: getSchemaPath(TestDto) },
+      { $ref: getSchemaPath(ExerciseDto) },
+    ],
+  })
+  data: TestDto | ExerciseDto | TheoryDto;
 
   @ApiProperty({
     enum: [

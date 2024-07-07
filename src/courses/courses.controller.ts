@@ -68,10 +68,10 @@ export class CoursesController {
     });
   }
 
-  // @Get('addCourseForAdmin')
+  // @Patch('addCourseForAdmin')
   // @UseGuards(AdminGuard)
   // @ApiCreatedResponse()
-  // async create(
+  // async patchMyCourse(
   //   @Body() dto: CreateCourseDto,
   //   @SessionInfo() session: SessionInfoDto,
   // ) {
