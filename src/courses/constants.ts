@@ -7,3 +7,4 @@ export const COURSE_PURCHASED = 'У вас куплен данный курс';
 export const ANY_COURSE_NOT_PURCHASED = 'У вас нет приобретенных курсов';
 export const ANY_COURSE_PURCHASED = 'У вас куплены все курсы';
 export const COURSE_ALREADY_ADDED = 'Данный курс уже добавлен';
+export const LESSON_YET_VIEWED = 'Урок уже просмотрен';

@@ -24,6 +24,7 @@ import { AuthGuard } from './auth.guard';
 import { SessionInfo } from './session-info.decorator';
 import { UsersService } from '../users/users.service';
 import { AdminGuard } from './admin.guard';
+import { TelegramService } from '../telegram/telegram.service';
 
 @Controller('auth')
 export class AuthController {
@@ -31,6 +32,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly cookieService: CookieService,
     private readonly usersService: UsersService,
+    private readonly telegramService: TelegramService,
   ) {}
 
   @Post('sign-up')
@@ -46,6 +48,12 @@ export class AuthController {
       body.lastName,
     );
     this.cookieService.setToken(res, accessToken);
+    const message =
+      'Регистрация нового пользователя\n' +
+      `Email: ${body.email}\n` +
+      `Имя: ${body.firstName}\n` +
+      `Фамилия: ${body.lastName}`;
+    await this.telegramService.sendMessage(message);
   }
 
   @Patch('update')

@@ -84,9 +84,13 @@ export class SectionsService {
       await this.lessonsService.getAllLessonsBySectionId(sectionId);
     const lessonsStat = await Promise.all(
       lessons.map(async (lesson) => {
-        const { viewed } = await this.dbService.userStatLesson.findFirst({
+        const userStatLesson = await this.dbService.userStatLesson.findFirst({
           where: { lessonId: lesson.id, userId },
         });
+        if (!userStatLesson) {
+          throw new NotFoundException();
+        }
+        const viewed = userStatLesson.viewed;
         return {
           id: lesson.id,
           title: lesson.title,

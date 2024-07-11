@@ -9,6 +9,7 @@ import {
   COURSE_NOT_FOUND,
   COURSE_NOT_PURCHASED,
   LESSON_NOT_FOUND,
+  LESSON_YET_VIEWED,
   SECTION_NOT_FOUND,
 } from './constants';
 import { CreateUserStatLessonDto, PatchMyCourseStatDto } from './dto';
@@ -88,6 +89,16 @@ export class MyCoursesService {
     });
   }
 
+  async patchLessonCompleted(userId: number, courseId: number) {
+    const { id, lessonCompleted } = await this.dbService.myCourse.findFirst({
+      where: { courseId, userId },
+    });
+    return this.dbService.myCourse.update({
+      where: { id },
+      data: { lessonCompleted: lessonCompleted + 1 },
+    });
+  }
+
   async createUserStatLesson(userId: number, lessonId: number) {
     return this.dbService.userStatLesson.create({
       data: { lessonId, userId, viewed: false },
@@ -101,9 +112,13 @@ export class MyCoursesService {
   }
 
   async patchUserStatLesson(userId: number, lessonId: number, viewed: boolean) {
-    const { id } = await this.dbService.userStatLesson.findFirst({
-      where: { userId, lessonId },
-    });
+    const { id, viewed: currentViewed } =
+      await this.dbService.userStatLesson.findFirst({
+        where: { userId, lessonId },
+      });
+    if (currentViewed) {
+      throw new BadRequestException(LESSON_YET_VIEWED);
+    }
     return this.dbService.userStatLesson.update({
       where: { id },
       data: { viewed },
@@ -126,7 +141,7 @@ export class MyCoursesService {
     const coursesWithUserStat = await Promise.all(
       courses.map(async (course) => {
         const lessonWithUserStat = await this.dbService.myCourse.findFirst({
-          where: { courseId: course.id },
+          where: { courseId: course.id, userId },
           select: {
             lessonCompleted: true,
             historyLessonId: true,

@@ -21,6 +21,7 @@ export class AccountService {
       where: { userId },
     });
   }
+
   async patchAccount(userId: number, patch: PatchAccountDto) {
     return this.dbService.account.update({
       where: { userId },

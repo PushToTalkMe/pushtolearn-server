@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import { DbService } from '../db/db.service';
 import { CreateLessonDto, PatchLessonDto } from './dto';
-import { LESSON_NOT_FOUND, SECTION_NOT_FOUND } from '../courses/constants';
+import {
+  COURSE_NOT_FOUND,
+  LESSON_NOT_FOUND,
+  SECTION_NOT_FOUND,
+} from '../courses/constants';
 import { TheoryService } from '../theory/theory.service';
 import { TestService } from '../test/test.service';
 import { ExerciseService } from '../exercise/exercise.service';
@@ -64,6 +68,20 @@ export class LessonsService {
         default:
           throw new BadRequestException(LESSON_TYPE_INVALID);
       }
+      const userIds = await this.dbService.myCourse.findMany({
+        where: { courseId: section.courseId },
+        select: { userId: true },
+      });
+      if (!userIds) {
+        throw new NotFoundException(COURSE_NOT_FOUND);
+      }
+      await Promise.all(
+        userIds.map(async ({ userId }) => {
+          await this.dbService.userStatLesson.create({
+            data: { lessonId: lesson.id, userId, viewed: false },
+          });
+        }),
+      );
       return { ...lesson, data: item };
     });
   }

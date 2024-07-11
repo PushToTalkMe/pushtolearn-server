@@ -5,11 +5,15 @@ import { SessionInfoDto } from '../auth/dto';
 import { SessionInfo } from '../auth/session-info.decorator';
 import { BuyService } from './buy.service';
 import { IdValidationPipe } from '../pipes/id-validation.pipe';
+import { TelegramService } from '../telegram/telegram.service';
 
 @Controller('buy')
 @UseGuards(AuthGuard)
 export class BuyController {
-  constructor(private readonly buyService: BuyService) {}
+  constructor(
+    private readonly buyService: BuyService,
+    private readonly telegramService: TelegramService,
+  ) {}
 
   @Post(':courseId')
   @ApiCreatedResponse()
@@ -17,6 +21,13 @@ export class BuyController {
     @Param('courseId', IdValidationPipe) courseId: number,
     @SessionInfo() session: SessionInfoDto,
   ) {
-    return this.buyService.buyCourse(session.id, courseId);
+    const buy = await this.buyService.buyCourse(session.id, courseId);
+    const message =
+      'Покупка курса\n' +
+      `Email: ${session.email}\n` +
+      `ID пользователя: ${session.id}\n` +
+      `ID курса: ${courseId}\n`;
+    await this.telegramService.sendMessage(message);
+    return buy;
   }
 }

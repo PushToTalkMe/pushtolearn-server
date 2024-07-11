@@ -8,6 +8,11 @@ import { BuyModule } from './buy/buy.module';
 import { TheoryModule } from './theory/theory.module';
 import { TestModule } from './test/test.module';
 import { ExerciseModule } from './exercise/exercise.module';
+import { CommentsModule } from './comments/comments.module';
+import { TelegramModule } from './telegram/telegram.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { getTelegramConfig } from './configs/telegram.config';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
@@ -20,6 +25,13 @@ import { ExerciseModule } from './exercise/exercise.module';
     TheoryModule,
     TestModule,
     ExerciseModule,
+    CommentsModule,
+    FilesModule,
+    TelegramModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: getTelegramConfig,
+    }),
   ],
 })
 export class AppModule {}

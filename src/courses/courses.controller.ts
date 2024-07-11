@@ -203,7 +203,6 @@ export class CoursesController {
         return { ...section, lessonsStat };
       }),
     );
-
     return { ...course, sectionsWithLessonsStat, lessonCount };
   }
 
@@ -222,15 +221,15 @@ export class CoursesController {
       session.id,
     );
     if (!course) {
-      throw new BadRequestException(COURSE_NOT_FOUND);
+      throw new NotFoundException(COURSE_NOT_FOUND);
     }
     const section = await this.sectionsService.getSection(sectionId);
     if (!section) {
-      throw new BadRequestException(SECTION_NOT_FOUND);
+      throw new NotFoundException(SECTION_NOT_FOUND);
     }
     const lesson = await this.lessonsService.getLesson(lessonId);
     if (!lesson) {
-      throw new BadRequestException(LESSON_NOT_FOUND);
+      throw new NotFoundException(LESSON_NOT_FOUND);
     }
     if (course.id === section.courseId && section.id === lesson.sectionId) {
       await this.myCoursesService.patchHistoryStat(session.id, courseId, {
@@ -262,15 +261,15 @@ export class CoursesController {
       session.id,
     );
     if (!course) {
-      throw new BadRequestException(COURSE_NOT_FOUND);
+      throw new NotFoundException(COURSE_NOT_FOUND);
     }
     const section = await this.sectionsService.getSection(sectionId);
     if (!section) {
-      throw new BadRequestException(SECTION_NOT_FOUND);
+      throw new NotFoundException(SECTION_NOT_FOUND);
     }
     const lesson = await this.lessonsService.getLesson(lessonId);
     if (!lesson) {
-      throw new BadRequestException(LESSON_NOT_FOUND);
+      throw new NotFoundException(LESSON_NOT_FOUND);
     }
     if (course.id === section.courseId && section.id === lesson.sectionId) {
       const { viewed } = await this.myCoursesService.patchUserStatLesson(
@@ -278,6 +277,7 @@ export class CoursesController {
         lessonId,
         true,
       );
+      await this.myCoursesService.patchLessonCompleted(session.id, courseId);
       return { viewed };
     } else {
       throw new BadRequestException(PAGE_NOT_FOUND);
