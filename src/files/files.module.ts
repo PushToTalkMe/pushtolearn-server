@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { FilesController } from './files.controller';
 import { FilesService } from './files.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
@@ -14,7 +13,7 @@ import { getJWTConfig } from '../configs/jwt.config';
       useFactory: getJWTConfig,
     }),
   ],
-  controllers: [FilesController],
   providers: [FilesService],
+  exports: [FilesService],
 })
 export class FilesModule {}

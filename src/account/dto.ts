@@ -30,6 +30,13 @@ export class AccountDto {
   @IsString()
   @IsOptional()
   username?: string;
+
+  @ApiProperty({
+    example: '/uploads/avatar/avatar.png',
+  })
+  @IsString()
+  @IsOptional()
+  avatar?: string;
 }
 
 export class PatchAccountDto {
@@ -51,4 +58,10 @@ export class PatchAccountDto {
   @IsString()
   @IsOptional()
   username?: string;
+}
+
+export class PatchAvatarDto {
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @IsOptional()
+  file: Express.Multer.File;
 }
