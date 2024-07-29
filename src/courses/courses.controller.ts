@@ -12,6 +12,9 @@ import {
   UseGuards,
   UsePipes,
   ValidationPipe,
+  UseInterceptors,
+  UploadedFile,
+  Res,
 } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard';
 import {
@@ -22,8 +25,17 @@ import {
   CreateCourseDto,
   CreateCoursesDtoWithOwner,
   PatchCourseDto,
+  ReleaseCourse,
+  PatchCourseImageDto,
+  CourseWithSectionsForEdit,
+  CourseDtoLastLessons,
 } from './dto';
-import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { AccountService } from '../account/account.service';
 import { SessionInfo } from '../auth/session-info.decorator';
 import { CoursesService } from './courses.service';
@@ -33,6 +45,7 @@ import { IdValidationPipe } from '../pipes/id-validation.pipe';
 import { SectionsService } from '../sections/sections.service';
 import { AdminGuard } from '../auth/admin.guard';
 import { LessonsService } from '../lessons/lessons.service';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   COURSE_NOT_FOUND,
   LESSON_NOT_FOUND,
@@ -40,6 +53,7 @@ import {
   SECTION_NOT_FOUND,
 } from './constants';
 import { LessonDto, LessonDtoWithViewed } from '../lessons/dto';
+import { Response } from 'express';
 
 @Controller('courses')
 @UseGuards(AuthGuard)
@@ -51,53 +65,70 @@ export class CoursesController {
     private readonly sectionsService: SectionsService,
     private readonly lessonsService: LessonsService,
   ) {}
+
   @Post('create')
   @UseGuards(AdminGuard)
   @ApiCreatedResponse()
   async create(
     @Body() dto: CreateCourseDto,
     @SessionInfo() session: SessionInfoDto,
-  ) {
+  ): Promise<CourseDto> {
     const { firstName, lastName } = await this.accountService.getAccount(
       session.id,
     );
     const author = firstName + ' ' + lastName;
-    return this.coursesService.create({
-      ...dto,
-      author,
-    });
+
+    return this.coursesService.create({ ...dto, author });
   }
 
-  // @Patch('addCourseForAdmin')
-  // @UseGuards(AdminGuard)
-  // @ApiCreatedResponse()
-  // async patchMyCourse(
-  //   @Body() dto: CreateCourseDto,
-  //   @SessionInfo() session: SessionInfoDto,
-  // ) {
-  //   const { firstName, lastName } = await this.accountService.getAccount(
-  //     session.id,
-  //   );
-  //   const author = firstName + ' ' + lastName;
-  //   return this.coursesService.create(
-  //     {
-  //       ...dto,
-  //       author,
-  //     },
-  //     session.id,
-  //   );
-  // }
+  @Get('download/*')
+  @ApiOkResponse()
+  getImage(@Param('0') url: string, @Res() res: Response) {
+    return this.coursesService.getImage(url, res);
+  }
 
   @Patch('update/:courseId')
   @UseGuards(AdminGuard)
   @ApiOkResponse({
-    type: CreateCourseDto,
+    type: CourseDto,
   })
   async patchCourse(
     @Param('courseId', IdValidationPipe) courseId: number,
     @Body() body: PatchCourseDto,
   ) {
     return this.coursesService.patchCourse(courseId, body);
+  }
+
+  @Patch('update/image/:courseId')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: PatchCourseImageDto })
+  @ApiOkResponse({
+    type: CourseDto,
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  patchCourseImage(
+    @Param('courseId', IdValidationPipe) courseId: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.coursesService.patchCourseImage(courseId, file);
+  }
+
+  @Patch('release/:courseId')
+  @UseGuards(AdminGuard)
+  @ApiOkResponse({
+    type: CourseDto,
+  })
+  async releaseCourse(@Param('courseId', IdValidationPipe) courseId: number) {
+    return this.coursesService.releaseCourse(courseId);
+  }
+
+  @Get('all')
+  @UseGuards(AdminGuard)
+  @ApiOkResponse({
+    type: [CourseDtoLastLessons],
+  })
+  async getAllCoursesForEdit() {
+    return this.coursesService.getAllCourses();
   }
 
   @Get()
@@ -204,6 +235,28 @@ export class CoursesController {
       }),
     );
     return { ...course, sectionsWithLessonsStat, lessonCount };
+  }
+
+  @Get('edit/:courseId')
+  @ApiOkResponse({
+    type: CourseWithSectionsForEdit,
+  })
+  @UseGuards(AdminGuard)
+  async getCourseByIdForEdit(
+    @Param('courseId', IdValidationPipe) courseId: number,
+  ) {
+    const course = await this.coursesService.getCourse(courseId);
+    const sections =
+      await this.sectionsService.getAllSectionsByCourseId(courseId);
+    const sectionsWithLessons = await Promise.all(
+      sections.map(async (section) => {
+        const lessons = await this.lessonsService.getAllLessonsBySectionId(
+          section.id,
+        );
+        return { ...section, lessons };
+      }),
+    );
+    return { ...course, sectionsWithLessons };
   }
 
   @Get('/my/:courseId/sections/:sectionId/lessons/:lessonId')

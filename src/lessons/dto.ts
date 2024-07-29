@@ -122,6 +122,35 @@ export class LessonDtoWithViewed extends LessonDto {
   viewed: boolean;
 }
 
+export class LessonsWithoutContent {
+  @ApiProperty({ example: 5 })
+  id: number;
+
+  @ApiProperty({ example: 1 })
+  sectionId: number;
+
+  @ApiProperty({ example: 2 })
+  sequence: number;
+
+  @ApiProperty({ example: 'Что такое NestJS' })
+  title: string;
+
+  @ApiProperty({
+    enum: [
+      $Enums.LessonType.Theory,
+      $Enums.LessonType.Test,
+      $Enums.LessonType.Exercise,
+    ],
+  })
+  type: $Enums.LessonType;
+
+  @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
+  createdAt: Date;
+
+  @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
+  updatedAt: Date;
+}
+
 export class LessonStat {
   @ApiProperty({ example: 5 })
   id: number;

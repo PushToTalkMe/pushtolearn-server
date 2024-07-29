@@ -136,7 +136,7 @@ export class MyCoursesService {
     const myCoursesId = await this.getMyCoursesId(userId);
     const courses = await this.dbService.course.findMany({
       where: { id: { in: myCoursesId } },
-      orderBy: { id: 'asc' },
+      orderBy: { updatedAt: 'desc' },
     });
     const coursesWithUserStat = await Promise.all(
       courses.map(async (course) => {
@@ -166,7 +166,7 @@ export class MyCoursesService {
     const myCoursesId = await this.getMyCoursesId(userId);
     return this.dbService.course.findMany({
       where: { id: { notIn: myCoursesId } },
-      orderBy: { id: 'asc' },
+      orderBy: [{ inDeveloping: 'asc' }, { updatedAt: 'desc' }],
     });
   }
 }

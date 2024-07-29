@@ -30,6 +30,19 @@ export class PatchSectionDto {
   sequence?: number;
 }
 
+export class PatchSequence {
+  @ApiProperty({ example: 5, type: Number })
+  id: number;
+
+  @ApiProperty({ example: 5, type: Number })
+  sequence: number;
+}
+
+export class PatchSequences {
+  @ApiProperty({ type: [PatchSequence] })
+  patch: PatchSequence[];
+}
+
 export class SectionDto {
   @ApiProperty({ example: '1' })
   id: number;

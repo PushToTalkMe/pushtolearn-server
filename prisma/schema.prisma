@@ -60,6 +60,7 @@ model Course {
 	duration String
 	tags String[]
 	price Int
+  inDeveloping Boolean
   myCourses MyCourse[]
 	sections Section[]
   createdAt DateTime @default(now())

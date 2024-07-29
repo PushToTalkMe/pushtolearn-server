@@ -9,7 +9,13 @@ import {
 } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 import { SectionsService } from './sections.service';
-import { CreateSectionDto, PatchSectionDto, SectionDto } from './dto';
+import {
+  CreateSectionDto,
+  PatchSectionDto,
+  PatchSequence,
+  PatchSequences,
+  SectionDto,
+} from './dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { AdminGuard } from '../auth/admin.guard';
 import { IdValidationPipe } from '../pipes/id-validation.pipe';
@@ -34,6 +40,12 @@ export class SectionsController {
     @Body() body: PatchSectionDto,
   ) {
     return this.sectionsService.patchSection(sectionId, body);
+  }
+
+  @Post('update/sequences')
+  @ApiOkResponse()
+  async patchSequences(@Body() body: PatchSequences) {
+    return this.sectionsService.patchSequences(body);
   }
 
   @Delete('delete/:sectionId')

@@ -7,17 +7,14 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { SectionsWithLessonsStatDto } from '../sections/dto';
+import { SectionDto, SectionsWithLessonsStatDto } from '../sections/dto';
 import { Type } from 'class-transformer';
+import { LessonDto, LessonsWithoutContent } from '../lessons/dto';
 
 export class CreateCourseDto {
   @ApiProperty({ example: 'NextJS + NestJS' })
   @IsString()
   title: string;
-
-  @ApiProperty({ example: 'https://imgs.ru/img#23124123' })
-  @IsString()
-  img: string;
 
   @ApiProperty({ example: '7.5 часов' })
   @IsString()
@@ -47,16 +44,16 @@ export class CourseDto {
   id: number;
 
   @ApiProperty({ example: 'NextJS + NestJS' })
-  title: 'Основы JavaScript';
+  title: string;
 
   @ApiProperty({ example: 'Vlad Ilyin' })
-  author: ' ';
+  author: string;
 
   @ApiProperty({ example: 'uri' })
-  img: 'uri';
+  img: string;
 
   @ApiProperty({ example: '7.5 часов' })
-  duration: '7.5 часов';
+  duration: string;
 
   @ApiProperty({
     example: ['JavaScript', 'Frontend', 'Backend'],
@@ -67,14 +64,36 @@ export class CourseDto {
   @ApiProperty({ example: 1 })
   price: number;
 
-  @ApiProperty({ example: 1 })
-  sequence: number;
+  @ApiProperty({ example: false })
+  inDeveloping: boolean;
 
   @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
   createdAt: Date;
 
   @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
   updatedAt: Date;
+}
+
+export class CourseDtoLastLessons extends CourseDto {
+  @ApiProperty({ example: 1, type: Number })
+  lastSectionId: number;
+
+  @ApiProperty({ example: 1, type: Number })
+  lastLessonId: number;
+}
+
+export class SectionWithLessons extends SectionDto {
+  @ApiProperty({
+    type: [LessonsWithoutContent],
+  })
+  lessons: LessonsWithoutContent[];
+}
+
+export class CourseWithSectionsForEdit extends CourseDto {
+  @ApiProperty({
+    type: [SectionWithLessons],
+  })
+  sectionsWithLessons: SectionWithLessons[];
 }
 
 export class CourseDtoWithSections extends CourseDto {
@@ -130,16 +149,17 @@ export class CourseDtoWithUserStat extends CourseDto {
   historyLessonId?: number;
 }
 
+export class PatchCourseImageDto {
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @IsOptional()
+  file: Express.Multer.File;
+}
+
 export class PatchCourseDto {
   @ApiProperty({ example: 'NextJS + NestJS' })
   @IsString()
   @IsOptional()
   title?: string;
-
-  @ApiProperty({ example: 'https://imgs.ru/img#23124123' })
-  @IsString()
-  @IsOptional()
-  img?: string;
 
   @ApiProperty({ example: '7.5 часов' })
   @IsString()
@@ -156,11 +176,12 @@ export class PatchCourseDto {
   @IsNumber()
   @IsOptional()
   price?: number;
+}
 
-  @ApiProperty({ example: '5' })
-  @IsNumber()
-  @IsOptional()
-  sequence?: number;
+export class ReleaseCourse {
+  @ApiProperty({ example: false })
+  @IsBoolean()
+  isDeveloping: boolean;
 }
 
 export class PatchMyCourseStatDto {

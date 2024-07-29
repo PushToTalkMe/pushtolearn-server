@@ -1,6 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DbService } from '../db/db.service';
-import { CreateSectionDto, PatchSectionDto } from './dto';
+import {
+  CreateSectionDto,
+  PatchSectionDto,
+  PatchSequence,
+  PatchSequences,
+} from './dto';
 import { LessonsService } from '../lessons/lessons.service';
 import { COURSE_NOT_FOUND, SECTION_NOT_FOUND } from '../courses/constants';
 
@@ -40,6 +45,18 @@ export class SectionsService {
       where: { id: sectionId },
       data: { ...patch },
     });
+  }
+
+  async patchSequences(patch: PatchSequences) {
+    await Promise.all(
+      patch.patch.map(
+        async (section) =>
+          await this.dbService.section.update({
+            where: { id: section.id },
+            data: { sequence: section.sequence },
+          }),
+      ),
+    );
   }
 
   async delete(sectionId: number) {

@@ -31,6 +31,30 @@ export class AccountService {
     });
   }
 
+  async getInfoAboutAllUsers() {
+    const accounts = await this.dbService.account.findMany({
+      orderBy: { id: 'asc' },
+    });
+    return Promise.all(
+      accounts.map(async (account) => {
+        const { role, email } = await this.dbService.user.findFirst({
+          where: { id: account.userId },
+        });
+        const myCourses = await this.dbService.myCourse.findMany({
+          where: { userId: account.userId },
+        });
+        return {
+          userId: account.userId,
+          email,
+          firstName: account.firstName,
+          lastName: account.lastName,
+          countCourses: myCourses.length,
+          role,
+        };
+      }),
+    );
+  }
+
   async patchAccount(userId: number, patch: PatchAccountDto) {
     return this.dbService.account.update({
       where: { userId },
@@ -56,7 +80,7 @@ export class AccountService {
     let saveFile: AFile = new AFile(file);
     if (file.mimetype.includes('image')) {
       const buffer = await this.filesService.convertToWebP(file.buffer);
-      const originalname = `${file.size}95345${userId}`;
+      const originalname = `${file.size}${userId}${Math.floor(Math.random() * Math.random() * 1000)}`;
       saveFile = new AFile({
         originalname: `${originalname.split('.')[0]}.webp`,
         buffer,
