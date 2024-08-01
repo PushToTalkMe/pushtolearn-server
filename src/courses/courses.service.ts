@@ -52,8 +52,6 @@ export class CoursesService {
       courseId: course.id,
     });
     const lesson = await this.lessonsService.create({
-      title: 'Первый урок',
-      data: { content: '**Пример текста**' },
       type: 'Theory',
       sectionId: section.id,
     });
@@ -176,8 +174,6 @@ export class CoursesService {
 
     const allCoursesLastlessons = await Promise.all(
       allCourses.map(async (course) => {
-        let lastSectionId = 0;
-        let lastLessonId = 0;
         const sectionsId = await this.dbService.section.findMany({
           where: { courseId: course.id },
           orderBy: { sequence: 'asc' },
@@ -204,8 +200,15 @@ export class CoursesService {
           }),
         );
         const result = lessonsId.filter((lesson) => lesson !== undefined);
-        let min = result[0].sectionSequence;
+        let min = result.length > 0 ? result[0].sectionSequence : null;
         let index = 0;
+        if (min === null) {
+          return {
+            ...course,
+            lastSectionId: 0,
+            lastLessonId: 0,
+          };
+        }
         for (let i = 1; i < result.length; i++) {
           if (result[i].sectionSequence < min) {
             min = result[i].sectionSequence;

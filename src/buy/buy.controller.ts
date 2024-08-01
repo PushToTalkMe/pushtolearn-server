@@ -27,7 +27,11 @@ export class BuyController {
       `Email: ${session.email}\n` +
       `ID пользователя: ${session.id}\n` +
       `ID курса: ${courseId}\n`;
-    this.telegramService.sendMessage(message);
+    try {
+      await this.telegramService.sendMessage(message);
+    } catch (e) {
+      return;
+    }
     return buy;
   }
 }

@@ -6,18 +6,6 @@ import { PatchTestDto, TestDto } from '../test/dto';
 import { PatchTheoryDto, TheoryDto } from '../theory/dto';
 
 export class CreateLessonDto {
-  @ApiProperty({ example: 'Введение' })
-  @IsString()
-  title: string;
-
-  @ApiProperty({
-    example: {
-      content:
-        '\n# Работа с данными в MongoDB Compass\n\n---\n\n## Работа с данными в MongoDB Compass\n\nВ предыдущих темах рассматривалась работа с сервером MongoDB через консольную оболочку **mongosh**. Но также мы можем работать с данными через графический клиент **MongoDB Compass**. Данный графический клиент довольно прост и инутивно понятен в использовании, а графическое представление данных для кого-то может быть проще для понимание. Соответственно кому-то, возможно, через графический клиент будет проще и удобнее работать.\n\nДля базовых операций, как то: создание/удаление коллекций, добавление, просмотр, изменения и удаления документов есть соответствующие элементы графического интерфейса:\n\n<p align="center">\n  <img alt="Скриншот результата выполнения кода сверху" src="./img/2.9.png"/>\n</p>\n```js\nconst a = 123\n```    ',
-    },
-  })
-  data: PatchTestDto & PatchExerciseDto & PatchTheoryDto;
-
   @ApiProperty({
     enum: [
       $Enums.LessonType.Theory,
@@ -149,6 +137,19 @@ export class LessonsWithoutContent {
 
   @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
   updatedAt: Date;
+}
+
+export class PatchSequence {
+  @ApiProperty({ example: 5, type: Number })
+  id: number;
+
+  @ApiProperty({ example: 5, type: Number })
+  sequence: number;
+}
+
+export class PatchSequences {
+  @ApiProperty({ type: [PatchSequence] })
+  patch: PatchSequence[];
 }
 
 export class LessonStat {

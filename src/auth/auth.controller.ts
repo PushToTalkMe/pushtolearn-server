@@ -53,7 +53,11 @@ export class AuthController {
       `Email: ${body.email}\n` +
       `Имя: ${body.firstName}\n` +
       `Фамилия: ${body.lastName}`;
-    await this.telegramService.sendMessage(message);
+    try {
+      await this.telegramService.sendMessage(message);
+    } catch (e) {
+      return;
+    }
   }
 
   @Patch('update')

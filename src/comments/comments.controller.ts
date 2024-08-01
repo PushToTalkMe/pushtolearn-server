@@ -56,7 +56,13 @@ export class CommentsController {
       `ID пользователя: ${comment.userId}\n` +
       `ID урока: ${dto.lessonId}\n` +
       `Комментарий: ${dto.text}\n`;
-    await this.telegramService.sendMessage(message);
+
+    try {
+      await this.telegramService.sendMessage(message);
+    } catch (e) {
+      return;
+    }
+
     return comment;
   }
 
@@ -65,6 +71,7 @@ export class CommentsController {
   async getComments(@Param('lessonId', IdValidationPipe) lessonId: number) {
     return this.commentsService.getComments(lessonId);
   }
+
   // @Patch('update/:commentId')
   // @ApiOkResponse({
   //   type: CommentDto,

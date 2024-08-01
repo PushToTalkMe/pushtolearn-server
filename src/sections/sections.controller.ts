@@ -49,7 +49,9 @@ export class SectionsController {
   }
 
   @Delete('delete/:sectionId')
-  @ApiOkResponse()
+  @ApiOkResponse({
+    type: SectionDto
+  })
   async deleteSection(@Param('sectionId', IdValidationPipe) sectionId: number) {
     return this.sectionsService.delete(sectionId);
   }

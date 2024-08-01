@@ -23,11 +23,6 @@ export class PatchSectionDto {
   @IsString()
   @IsOptional()
   title?: string;
-
-  @ApiProperty({ example: '5' })
-  @IsNumber()
-  @IsOptional()
-  sequence?: number;
 }
 
 export class PatchSequence {

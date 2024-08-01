@@ -48,7 +48,7 @@ export class SectionsService {
   }
 
   async patchSequences(patch: PatchSequences) {
-    await Promise.all(
+    return await Promise.all(
       patch.patch.map(
         async (section) =>
           await this.dbService.section.update({
@@ -65,8 +65,57 @@ export class SectionsService {
       throw new NotFoundException(SECTION_NOT_FOUND);
     }
     return this.dbService.$transaction(async () => {
+      const defaultIds = { sectionId: 0, lessonId: 0 };
+      const sectionForDelete = await this.dbService.section.findFirst({
+        where: { id: sectionId },
+      });
+      const sections = (
+        await this.getAllSectionsByCourseId(section.courseId)
+      ).filter((section) => section.id !== sectionId);
+      let lessons = [];
+      if (sections.length > 0) {
+        lessons = await this.lessonsService.getAllLessonsBySectionId(
+          sections[0].id,
+        );
+      }
+      const userIds = await this.dbService.myCourse.findMany({
+        where: { courseId: sectionForDelete.courseId },
+        select: { userId: true },
+      });
+      if (!userIds) {
+        await this.lessonsService.deleteAllLessonsBySectionId(sectionId);
+        return await this.dbService.section.delete({
+          where: { id: sectionId },
+        });
+      }
+      await Promise.all(
+        userIds.map(async ({ userId }) => {
+          const { id } = await this.dbService.myCourse.findFirst({
+            where: { userId, courseId: sectionForDelete.courseId },
+          });
+          if (lessons.length > 0) {
+            await this.dbService.myCourse.update({
+              where: { id },
+              data: {
+                historyLessonId: lessons[0].id,
+                historySectionId: sections[0].id,
+              },
+            });
+          } else {
+            await this.dbService.myCourse.update({
+              where: { id },
+              data: {
+                historyLessonId: defaultIds.lessonId,
+                historySectionId: defaultIds.sectionId,
+              },
+            });
+          }
+        }),
+      );
       await this.lessonsService.deleteAllLessonsBySectionId(sectionId);
-      return this.dbService.section.delete({ where: { id: sectionId } });
+      return await this.dbService.section.delete({
+        where: { id: sectionId },
+      });
     });
   }
 
