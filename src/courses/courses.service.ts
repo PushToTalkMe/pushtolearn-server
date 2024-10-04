@@ -1,10 +1,16 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { DbService } from '../db/db.service';
-import { CreateCoursesDtoWithOwner, PatchCourseDto } from './dto';
+import {
+  CreateCoursesDtoWithOwner,
+  PatchCourseDto,
+  PatchCourseImageDto,
+  ReleaseCourse,
+} from './dto';
 import { MyCoursesService } from './my-courses.service';
 import {
   ANY_COURSE_NOT_PURCHASED,
@@ -12,9 +18,18 @@ import {
   COURSE_NOT_FOUND,
   COURSE_NOT_PURCHASED,
   COURSE_PURCHASED,
+  LESSON_NOT_FOUND,
+  LESSON_NOT_FOUND_FOR_RELEASE,
+  SECTION_NOT_FOUND,
+  SECTION_NOT_FOUND_FOR_RELEASE,
 } from './constants';
+import * as fs from 'fs';
+import * as path from 'path';
 import { SectionsService } from '../sections/sections.service';
 import { LessonsService } from '../lessons/lessons.service';
+import { IFile } from './image.class';
+import { FilesService } from '../files/files.service';
+import { Response } from 'express';
 
 @Injectable()
 export class CoursesService {
@@ -23,25 +38,114 @@ export class CoursesService {
     private readonly myCoursesService: MyCoursesService,
     private readonly sectionsService: SectionsService,
     private readonly lessonsService: LessonsService,
+    private readonly filesService: FilesService,
   ) {}
-  async create(dto: CreateCoursesDtoWithOwner, userId: number) {
-    return this.dbService.$transaction(async () => {
-      const course = await this.dbService.course.create({
-        data: dto,
-      });
-      await this.myCoursesService.addCourse(userId, course.id);
-      return course;
+  async create(dto: CreateCoursesDtoWithOwner, userId: number, role: string) {
+    const course = await this.dbService.course.create({
+      data: {
+        ...dto,
+        img: '',
+        inDeveloping: true,
+      },
     });
+    const section = await this.sectionsService.create(
+      {
+        title: 'Первый раздел',
+        courseId: course.id,
+      },
+      userId,
+      role,
+    );
+
+    return {
+      ...course,
+      lastSectionId: section.id,
+      lastLessonId: section.lessons[0].id,
+    };
   }
 
-  async patchCourse(courseId: number, patch: PatchCourseDto) {
+  async uploadImage(file: Express.Multer.File, courseId: number) {
+    let saveFile: IFile = new IFile(file);
+    if (file.mimetype.includes('image')) {
+      const buffer = await this.filesService.convertToWebP(file.buffer);
+      const originalname = `${file.size}${courseId}${Math.floor(Math.random() * Math.random() * 1000)}${Date.now()}`;
+      saveFile = new IFile({
+        originalname: `${originalname.split('.')[0]}.webp`,
+        buffer,
+      });
+    }
+    return this.filesService.saveFiles(saveFile, `courses/${courseId}`);
+  }
+
+  async getImage(url: string, res: Response) {
+    const response = fs.createReadStream(path.resolve(`./uploads/${url}`));
+    response.pipe(res);
+  }
+
+  async patchCourse(
+    courseId: number,
+    patch: PatchCourseDto,
+    userId: number,
+    role: string,
+  ) {
     const course = await this.getCourse(courseId);
     if (!course) {
       throw new NotFoundException(COURSE_NOT_FOUND);
     }
+    if (course.authorId !== userId && role !== 'admin') {
+      throw new ForbiddenException('Нет доступа');
+    }
     return this.dbService.course.update({
       where: { id: courseId },
       data: { ...patch },
+    });
+  }
+
+  async releaseCourse(courseId: number, userId: number, role: string) {
+    const course = await this.getCourse(courseId);
+    if (!course) {
+      throw new NotFoundException(COURSE_NOT_FOUND);
+    }
+    if (course.authorId !== userId && role !== 'admin') {
+      throw new ForbiddenException('Нет доступа');
+    }
+    const sections =
+      await this.sectionsService.getAllSectionsByCourseId(courseId);
+    if (sections.length <= 0) {
+      throw new NotFoundException(SECTION_NOT_FOUND_FOR_RELEASE);
+    }
+    const lessons = await Promise.all(
+      sections.map(
+        async (section) =>
+          await this.lessonsService.getAllLessonsBySectionId(section.id),
+      ),
+    );
+    if (lessons.length <= 0) {
+      throw new NotFoundException(LESSON_NOT_FOUND_FOR_RELEASE);
+    }
+    return this.dbService.course.update({
+      where: { id: courseId },
+      data: { inDeveloping: false },
+    });
+  }
+
+  async patchCourseImage(
+    courseId: number,
+    file: Express.Multer.File,
+    userId: number,
+    role: string,
+  ) {
+    const course = await this.getCourse(courseId);
+    if (!course) {
+      throw new NotFoundException(COURSE_NOT_FOUND);
+    }
+    if (course.authorId !== userId && role !== 'admin') {
+      throw new ForbiddenException('Нет доступа');
+    }
+    const { url } = await this.uploadImage(file, courseId);
+    return this.dbService.course.update({
+      where: { id: courseId },
+      data: { img: url },
     });
   }
 
@@ -51,10 +155,13 @@ export class CoursesService {
     });
   }
 
-  async delete(courseId: number) {
+  async delete(courseId: number, userId: number, role: string) {
     const course = await this.getCourse(courseId);
     if (!course) {
       throw new NotFoundException(COURSE_NOT_FOUND);
+    }
+    if (course.authorId !== userId && role !== 'admin') {
+      throw new ForbiddenException('Нет доступа');
     }
     return this.dbService.$transaction(async () => {
       const sectionsId =
@@ -82,6 +189,129 @@ export class CoursesService {
       throw new BadRequestException(COURSE_NOT_PURCHASED);
     }
     return myCourse;
+  }
+
+  async getAllCourses() {
+    const allCourses = await this.dbService.course.findMany({
+      orderBy: [{ inDeveloping: 'asc' }, { updatedAt: 'desc' }],
+    });
+    if (!allCourses) {
+      throw new BadRequestException(COURSE_NOT_FOUND);
+    }
+
+    const allCoursesLastlessons = await Promise.all(
+      allCourses.map(async (course) => {
+        const sectionsId = await this.dbService.section.findMany({
+          where: { courseId: course.id },
+          orderBy: { sequence: 'asc' },
+          select: { id: true, sequence: true },
+        });
+        const lessonsId = await Promise.all(
+          sectionsId.map(async (section) => {
+            const lesson = await this.dbService.lesson.findFirst({
+              where: { sectionId: section.id },
+              orderBy: { sequence: 'asc' },
+              take: 1,
+              select: { id: true, sequence: true },
+            });
+            if (lesson) {
+              return {
+                sectionId: section.id,
+                sectionSequence: section.sequence,
+                lessonId: lesson.id,
+                lessonSequence: lesson.sequence,
+              };
+            } else {
+              return;
+            }
+          }),
+        );
+        const result = lessonsId.filter((lesson) => lesson !== undefined);
+        let min = result.length > 0 ? result[0].sectionSequence : null;
+        let index = 0;
+        if (min === null) {
+          return {
+            ...course,
+            lastSectionId: 0,
+            lastLessonId: 0,
+          };
+        }
+        for (let i = 1; i < result.length; i++) {
+          if (result[i].sectionSequence < min) {
+            min = result[i].sectionSequence;
+            index = i;
+          }
+        }
+        return {
+          ...course,
+          lastSectionId: result[index].sectionId,
+          lastLessonId: result[index].lessonId,
+        };
+      }),
+    );
+    return allCoursesLastlessons;
+  }
+
+  async getCreatedCourses(userId: number) {
+    const allCourses = await this.dbService.course.findMany({
+      where: { authorId: userId },
+      orderBy: [{ inDeveloping: 'asc' }, { updatedAt: 'desc' }],
+    });
+    if (!allCourses) {
+      throw new BadRequestException(COURSE_NOT_FOUND);
+    }
+
+    const allCoursesLastlessons = await Promise.all(
+      allCourses.map(async (course) => {
+        const sectionsId = await this.dbService.section.findMany({
+          where: { courseId: course.id },
+          orderBy: { sequence: 'asc' },
+          select: { id: true, sequence: true },
+        });
+        const lessonsId = await Promise.all(
+          sectionsId.map(async (section) => {
+            const lesson = await this.dbService.lesson.findFirst({
+              where: { sectionId: section.id },
+              orderBy: { sequence: 'asc' },
+              take: 1,
+              select: { id: true, sequence: true },
+            });
+            if (lesson) {
+              return {
+                sectionId: section.id,
+                sectionSequence: section.sequence,
+                lessonId: lesson.id,
+                lessonSequence: lesson.sequence,
+              };
+            } else {
+              return;
+            }
+          }),
+        );
+        const result = lessonsId.filter((lesson) => lesson !== undefined);
+        let min = result.length > 0 ? result[0].sectionSequence : null;
+        let index = 0;
+        if (min === null) {
+          return {
+            ...course,
+            lastSectionId: 0,
+            lastLessonId: 0,
+          };
+        }
+        for (let i = 1; i < result.length; i++) {
+          if (result[i].sectionSequence < min) {
+            min = result[i].sectionSequence;
+            index = i;
+          }
+        }
+        return {
+          ...course,
+          lastSectionId: result[index].sectionId,
+          lastLessonId: result[index].lessonId,
+        };
+      }),
+    );
+    return allCoursesLastlessons;
   }
 
   async getCourseFromNotMy(courseId: number, userId: number) {

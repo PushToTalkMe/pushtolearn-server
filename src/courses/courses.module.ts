@@ -9,6 +9,7 @@ import { AccountModule } from '../account/account.module';
 import { MyCoursesService } from './my-courses.service';
 import { SectionsModule } from '../sections/sections.module';
 import { LessonsModule } from '../lessons/lessons.module';
+import { FilesModule } from '../files/files.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { LessonsModule } from '../lessons/lessons.module';
     ConfigModule,
     SectionsModule,
     LessonsModule,
+    FilesModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

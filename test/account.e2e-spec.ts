@@ -2,11 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { SignInBodyDto } from '../src/auth/dto';
+import { SignInBodyDto, SignUpBodyDto } from '../src/auth/dto';
 import { ConfigService } from '@nestjs/config';
 import { STUDENT_LOGIN, STUDENT_PASSWORD } from './constants';
 import { PatchAccountDto } from '../src/account/dto';
 import { randomBytes } from 'crypto';
+import { USER_DELETED } from '../src/users/constants';
 
 const configService = new ConfigService();
 
@@ -15,14 +16,16 @@ const signInStudentDto: SignInBodyDto = {
   password: configService.get(STUDENT_PASSWORD),
 };
 
-const patchAccountDto: PatchAccountDto = {
+const signUpStudentDto: SignUpBodyDto = {
+  email: configService.get(STUDENT_LOGIN),
+  password: configService.get(STUDENT_PASSWORD),
   firstName: randomBytes(4).toString('hex'),
   lastName: randomBytes(4).toString('hex'),
 };
 
-const patchAccountDtoToDefault: PatchAccountDto = {
-  firstName: '',
-  lastName: '',
+const patchAccountDto: PatchAccountDto = {
+  firstName: randomBytes(4).toString('hex'),
+  lastName: randomBytes(4).toString('hex'),
 };
 
 describe('AccountController (e2e)', () => {
@@ -38,9 +41,9 @@ describe('AccountController (e2e)', () => {
     await app.init();
 
     await request(app.getHttpServer())
-      .post('/auth/sign-in')
-      .send(signInStudentDto)
-      .expect(200)
+      .post('/auth/sign-up')
+      .send(signUpStudentDto)
+      .expect(201)
       .then(({ headers }: request.Response) => {
         cookies = headers['set-cookie'];
         return;
@@ -76,15 +79,12 @@ describe('AccountController (e2e)', () => {
 
   afterAll(async () => {
     await request(app.getHttpServer())
-      .patch('/account')
+      .delete('/auth/delete')
       .set('Cookie', cookies)
-      .send(patchAccountDtoToDefault)
       .expect(200)
       .then(({ body }: request.Response) => {
-        const { firstName, lastName, username } = body;
-        expect(firstName).toBeFalsy();
-        expect(lastName).toBeFalsy();
-        expect(username).toBeFalsy();
+        const message = body.message;
+        expect(message).toEqual(USER_DELETED);
         return;
       });
     await app.close();

@@ -5,11 +5,17 @@ import { JwtModule } from '@nestjs/jwt';
 import { getJWTConfig } from '../configs/jwt.config';
 import { DbModule } from '../db/db.module';
 import { LessonsController } from './lessons.controller';
+import { TheoryModule } from '../theory/theory.module';
+import { TestModule } from '../test/test.module';
+import { ExerciseModule } from '../exercise/exercise.module';
 
 @Module({
   imports: [
     DbModule,
     ConfigModule,
+    TheoryModule,
+    TestModule,
+    ExerciseModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -5,18 +5,26 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
-import { SessionInfoDto, SignInBodyDto, SignUpBodyDto } from './dto';
+import {
+  PatchUpdateRoleDto,
+  SessionInfoDto,
+  SignInBodyDto,
+  SignUpBodyDto,
+} from './dto';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { CookieService } from './cookie.service';
 import { AuthGuard } from './auth.guard';
 import { SessionInfo } from './session-info.decorator';
 import { UsersService } from '../users/users.service';
+import { AdminGuard } from './admin.guard';
+import { TelegramService } from '../telegram/telegram.service';
 
 @Controller('auth')
 export class AuthController {
@@ -24,6 +32,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly cookieService: CookieService,
     private readonly usersService: UsersService,
+    private readonly telegramService: TelegramService,
   ) {}
 
   @Post('sign-up')
@@ -35,8 +44,28 @@ export class AuthController {
     const { accessToken } = await this.authService.signUp(
       body.email,
       body.password,
+      body.firstName,
+      body.lastName,
     );
     this.cookieService.setToken(res, accessToken);
+    const message =
+      'Регистрация нового пользователя\n' +
+      `Email: ${body.email}\n` +
+      `Имя: ${body.firstName}\n` +
+      `Фамилия: ${body.lastName}`;
+    try {
+      await this.telegramService.sendMessage(message);
+    } catch (e) {
+      return;
+    }
+  }
+
+  @Patch('update')
+  @ApiOkResponse()
+  @UseGuards(AuthGuard)
+  @UseGuards(AdminGuard)
+  async updateRole(@Body() patch: PatchUpdateRoleDto) {
+    return this.usersService.update(patch.email, patch.role);
   }
 
   @Delete('delete')

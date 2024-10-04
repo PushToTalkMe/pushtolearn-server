@@ -12,15 +12,31 @@ import {
   UseGuards,
   UsePipes,
   ValidationPipe,
+  UseInterceptors,
+  UploadedFile,
+  Res,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard';
 import {
   CourseDto,
+  CourseDtoWithLessonCount,
+  CourseDtoWithUserStat,
+  CourseDtoWithSections,
   CreateCourseDto,
   CreateCoursesDtoWithOwner,
   PatchCourseDto,
+  ReleaseCourse,
+  PatchCourseImageDto,
+  CourseWithSectionsForEdit,
+  CourseDtoLastLessons,
 } from './dto';
-import { ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { AccountService } from '../account/account.service';
 import { SessionInfo } from '../auth/session-info.decorator';
 import { CoursesService } from './courses.service';
@@ -30,13 +46,15 @@ import { IdValidationPipe } from '../pipes/id-validation.pipe';
 import { SectionsService } from '../sections/sections.service';
 import { AdminGuard } from '../auth/admin.guard';
 import { LessonsService } from '../lessons/lessons.service';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   COURSE_NOT_FOUND,
   LESSON_NOT_FOUND,
   PAGE_NOT_FOUND,
   SECTION_NOT_FOUND,
 } from './constants';
-import { LessonDto } from '../lessons/dto';
+import { LessonDto, LessonDtoWithViewed } from '../lessons/dto';
+import { Response } from 'express';
 
 @Controller('courses')
 @UseGuards(AuthGuard)
@@ -48,36 +66,90 @@ export class CoursesController {
     private readonly sectionsService: SectionsService,
     private readonly lessonsService: LessonsService,
   ) {}
+
   @Post('create')
-  @UseGuards(AdminGuard)
   @ApiCreatedResponse()
   async create(
     @Body() dto: CreateCourseDto,
     @SessionInfo() session: SessionInfoDto,
-  ) {
+  ): Promise<CourseDto> {
     const { firstName, lastName } = await this.accountService.getAccount(
       session.id,
     );
     const author = firstName + ' ' + lastName;
+
     return this.coursesService.create(
-      {
-        ...dto,
-        author,
-      },
+      { ...dto, author, authorId: session.id },
       session.id,
+      session.role,
     );
   }
 
+  @Get('download/*')
+  @ApiOkResponse()
+  getImage(@Param('0') url: string, @Res() res: Response) {
+    return this.coursesService.getImage(url, res);
+  }
+
   @Patch('update/:courseId')
-  @UseGuards(AdminGuard)
   @ApiOkResponse({
-    type: CreateCourseDto,
+    type: CourseDto,
   })
   async patchCourse(
     @Param('courseId', IdValidationPipe) courseId: number,
     @Body() body: PatchCourseDto,
+    @SessionInfo() session: SessionInfoDto,
   ) {
-    return this.coursesService.patchCourse(courseId, body);
+    return this.coursesService.patchCourse(
+      courseId,
+      body,
+      session.id,
+      session.role,
+    );
+  }
+
+  @Patch('update/image/:courseId')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: PatchCourseImageDto })
+  @ApiOkResponse({
+    type: CourseDto,
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  patchCourseImage(
+    @Param('courseId', IdValidationPipe) courseId: number,
+    @UploadedFile() file: Express.Multer.File,
+    @SessionInfo() session: SessionInfoDto,
+  ) {
+    return this.coursesService.patchCourseImage(
+      courseId,
+      file,
+      session.id,
+      session.role,
+    );
+  }
+
+  @Patch('release/:courseId')
+  @ApiOkResponse({
+    type: CourseDto,
+  })
+  async releaseCourse(
+    @Param('courseId', IdValidationPipe) courseId: number,
+    @SessionInfo() session: SessionInfoDto,
+  ) {
+    return this.coursesService.releaseCourse(
+      courseId,
+      session.id,
+      session.role,
+    );
+  }
+
+  @Get('all')
+  @UseGuards(AdminGuard)
+  @ApiOkResponse({
+    type: [CourseDtoLastLessons],
+  })
+  async getAllCoursesForEdit() {
+    return this.coursesService.getAllCourses();
   }
 
   @Get()
@@ -89,12 +161,18 @@ export class CoursesController {
   }
 
   @Delete(':courseId')
-  @UseGuards(AdminGuard)
   @ApiOkResponse({
     type: CourseDto,
   })
-  async delete(@Param('courseId', IdValidationPipe) courseId: number) {
-    const deletedCourse = await this.coursesService.delete(courseId);
+  async delete(
+    @Param('courseId', IdValidationPipe) courseId: number,
+    @SessionInfo() session: SessionInfoDto,
+  ) {
+    const deletedCourse = await this.coursesService.delete(
+      courseId,
+      session.id,
+      session.role,
+    );
     if (!deletedCourse) {
       throw new NotFoundException(COURSE_NOT_FOUND);
     }
@@ -102,7 +180,7 @@ export class CoursesController {
 
   @Get('notMy/:courseId')
   @ApiOkResponse({
-    type: CourseDto,
+    type: CourseDtoWithLessonCount,
   })
   async getNotMyCourseById(
     @Param('courseId', IdValidationPipe) courseId: number,
@@ -118,10 +196,10 @@ export class CoursesController {
     await Promise.all(
       sections.map(async (section) => {
         const lessonsTitle =
-          await this.sectionsService.getAllLessonsTitleBySectionId(section.id);
-        if (lessonsTitle) {
+          await this.sectionsService.getAllSectionsWithLessons(section.id);
+        lessonsTitle.forEach(() => {
           lessonCount += 1;
-        }
+        });
       }),
     );
 
@@ -130,15 +208,61 @@ export class CoursesController {
 
   @Get('my')
   @ApiOkResponse({
-    type: [CourseDto],
+    type: [CourseDtoWithUserStat],
   })
   async getMyCourses(@SessionInfo() session: SessionInfoDto) {
-    return this.myCoursesService.getMyCourses(session.id);
+    const courses = await this.myCoursesService.getMyCourses(session.id);
+    const coursesWithUserStat = await Promise.all(
+      courses.map(async (course) => {
+        let lessonCount = 0;
+        const sections = await this.sectionsService.getAllSectionsByCourseId(
+          course.id,
+        );
+        await Promise.all(
+          sections.map(async (section) => {
+            const lessonsStat =
+              await this.sectionsService.getAllSectionsWithLessons(section.id);
+            lessonsStat.forEach(() => {
+              lessonCount += 1;
+            });
+          }),
+        );
+        return { ...course, lessonCount };
+      }),
+    );
+    return coursesWithUserStat;
+  }
+
+  @Get('created')
+  @ApiOkResponse({
+    type: [CourseDtoWithUserStat],
+  })
+  async getCreatedCourses(@SessionInfo() session: SessionInfoDto) {
+    const courses = await this.coursesService.getCreatedCourses(session.id);
+    const coursesWithUserStat = await Promise.all(
+      courses.map(async (course) => {
+        let lessonCount = 0;
+        const sections = await this.sectionsService.getAllSectionsByCourseId(
+          course.id,
+        );
+        await Promise.all(
+          sections.map(async (section) => {
+            const lessonsStat =
+              await this.sectionsService.getAllSectionsWithLessons(section.id);
+            lessonsStat.forEach(() => {
+              lessonCount += 1;
+            });
+          }),
+        );
+        return { ...course, lessonCount };
+      }),
+    );
+    return coursesWithUserStat;
   }
 
   @Get('my/:courseId')
   @ApiOkResponse({
-    type: CourseDto,
+    type: CourseDtoWithSections,
   })
   async getCourseById(
     @Param('courseId', IdValidationPipe) courseId: number,
@@ -148,23 +272,53 @@ export class CoursesController {
       courseId,
       session.id,
     );
+    let lessonCount = 0;
     const sections =
       await this.sectionsService.getAllSectionsByCourseId(courseId);
-
-    const sectionsWithLessonsTitle = await Promise.all(
+    const sectionsWithLessonsStat = await Promise.all(
       sections.map(async (section) => {
-        const lessonsTitle =
-          await this.sectionsService.getAllLessonsTitleBySectionId(section.id);
-        return { ...section, lessonsTitle };
+        const lessonsStat =
+          await this.sectionsService.getAllLessonsStatBySectionId(
+            section.id,
+            session.id,
+          );
+        lessonsStat.forEach(() => {
+          lessonCount += 1;
+        });
+        return { ...section, lessonsStat };
       }),
     );
+    return { ...course, sectionsWithLessonsStat, lessonCount };
+  }
 
-    return { ...course, sectionsWithLessonsTitle };
+  @Get('edit/:courseId')
+  @ApiOkResponse({
+    type: CourseWithSectionsForEdit,
+  })
+  async getCourseByIdForEdit(
+    @Param('courseId', IdValidationPipe) courseId: number,
+    @SessionInfo() session: SessionInfoDto,
+  ) {
+    const course = await this.coursesService.getCourse(courseId);
+    if (course.authorId !== session.id && session.role !== 'admin') {
+      throw new ForbiddenException('Нет доступа');
+    }
+    const sections =
+      await this.sectionsService.getAllSectionsByCourseId(courseId);
+    const sectionsWithLessons = await Promise.all(
+      sections.map(async (section) => {
+        const lessons = await this.lessonsService.getAllLessonsBySectionId(
+          section.id,
+        );
+        return { ...section, lessons };
+      }),
+    );
+    return { ...course, sectionsWithLessons };
   }
 
   @Get('/my/:courseId/sections/:sectionId/lessons/:lessonId')
   @ApiOkResponse({
-    type: LessonDto,
+    type: LessonDtoWithViewed,
   })
   async getPageLesson(
     @Param('courseId', IdValidationPipe) courseId: number,
@@ -177,18 +331,64 @@ export class CoursesController {
       session.id,
     );
     if (!course) {
-      throw new BadRequestException(COURSE_NOT_FOUND);
+      throw new NotFoundException(COURSE_NOT_FOUND);
     }
     const section = await this.sectionsService.getSection(sectionId);
     if (!section) {
-      throw new BadRequestException(SECTION_NOT_FOUND);
+      throw new NotFoundException(SECTION_NOT_FOUND);
     }
     const lesson = await this.lessonsService.getLesson(lessonId);
     if (!lesson) {
-      throw new BadRequestException(LESSON_NOT_FOUND);
+      throw new NotFoundException(LESSON_NOT_FOUND);
     }
     if (course.id === section.courseId && section.id === lesson.sectionId) {
-      return lesson;
+      await this.myCoursesService.patchHistoryStat(session.id, courseId, {
+        historySectionId: sectionId,
+        historyLessonId: lessonId,
+      });
+      const { viewed } = await this.myCoursesService.getUserStatLesson(
+        session.id,
+        lessonId,
+      );
+      return { ...lesson, viewed };
+    } else {
+      throw new BadRequestException(PAGE_NOT_FOUND);
+    }
+  }
+
+  @Patch('/my/:courseId/sections/:sectionId/lessons/:lessonId/viewed')
+  @ApiOkResponse({
+    type: Boolean,
+  })
+  async lessonViewed(
+    @Param('courseId', IdValidationPipe) courseId: number,
+    @Param('sectionId', IdValidationPipe) sectionId: number,
+    @Param('lessonId', IdValidationPipe) lessonId: number,
+    @SessionInfo() session: SessionInfoDto,
+  ) {
+    const course = await this.coursesService.getCourseFromMy(
+      courseId,
+      session.id,
+    );
+    if (!course) {
+      throw new NotFoundException(COURSE_NOT_FOUND);
+    }
+    const section = await this.sectionsService.getSection(sectionId);
+    if (!section) {
+      throw new NotFoundException(SECTION_NOT_FOUND);
+    }
+    const lesson = await this.lessonsService.getLesson(lessonId);
+    if (!lesson) {
+      throw new NotFoundException(LESSON_NOT_FOUND);
+    }
+    if (course.id === section.courseId && section.id === lesson.sectionId) {
+      const { viewed } = await this.myCoursesService.patchUserStatLesson(
+        session.id,
+        lessonId,
+        true,
+      );
+      await this.myCoursesService.patchLessonCompleted(session.id, courseId);
+      return { viewed };
     } else {
       throw new BadRequestException(PAGE_NOT_FOUND);
     }
