@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -13,7 +14,13 @@ import {
 import { TheoryService } from '../theory/theory.service';
 import { TestService } from '../test/test.service';
 import { ExerciseService } from '../exercise/exercise.service';
-import { EXERCISE, LESSON_TYPE_INVALID, TEST, THEORY } from './constants';
+import {
+  EXERCISE,
+  LESSON_LAST_NOT_DELETE,
+  LESSON_TYPE_INVALID,
+  TEST,
+  THEORY,
+} from './constants';
 
 @Injectable()
 export class LessonsService {
@@ -24,7 +31,7 @@ export class LessonsService {
     private readonly exerciseService: ExerciseService,
   ) {}
 
-  async create(dto: CreateLessonDto) {
+  async create(dto: CreateLessonDto, userId: number, role: string) {
     return await this.dbService.$transaction(async () => {
       const section = await this.dbService.section.findFirst({
         where: { id: dto.sectionId },
@@ -32,7 +39,15 @@ export class LessonsService {
       if (!section) {
         throw new NotFoundException(SECTION_NOT_FOUND);
       }
-
+      const course = await this.dbService.course.findFirst({
+        where: { id: section.courseId },
+      });
+      if (!course) {
+        throw new NotFoundException(COURSE_NOT_FOUND);
+      }
+      if (course.authorId !== userId && role !== 'admin') {
+        throw new ForbiddenException('Нет доступа');
+      }
       const maxSequence = await this.dbService.lesson.findMany({
         where: { sectionId: section.id },
         orderBy: { sequence: 'desc' },
@@ -85,8 +100,28 @@ export class LessonsService {
     });
   }
 
-  async patchLesson(lessonId: number, patch: PatchLessonDto) {
-    await this.getLesson(lessonId);
+  async patchLesson(
+    lessonId: number,
+    patch: PatchLessonDto,
+    userId: number,
+    role: string,
+  ) {
+    const lesson = await this.getLesson(lessonId);
+    const section = await this.dbService.section.findFirst({
+      where: { id: lesson.sectionId },
+    });
+    if (!section) {
+      throw new NotFoundException(SECTION_NOT_FOUND);
+    }
+    const course = await this.dbService.course.findFirst({
+      where: { id: section.courseId },
+    });
+    if (!course) {
+      throw new NotFoundException(COURSE_NOT_FOUND);
+    }
+    if (course.authorId !== userId && role !== 'admin') {
+      throw new ForbiddenException('Нет доступа');
+    }
     return await this.dbService.$transaction(async () => {
       const { data, ...newPatch } = patch;
       const lesson = await this.dbService.lesson.update({
@@ -111,15 +146,35 @@ export class LessonsService {
     });
   }
 
-  async patchSequences(patch: PatchSequences) {
+  async patchSequences(patch: PatchSequences, userId: number, role: string) {
     return await Promise.all(
-      patch.patch.map(
-        async (lesson) =>
-          await this.dbService.lesson.update({
-            where: { id: lesson.id },
-            data: { sequence: lesson.sequence },
-          }),
-      ),
+      patch.patch.map(async (lesson) => {
+        const lessonDb = await this.dbService.lesson.findFirst({
+          where: { id: lesson.id },
+        });
+        if (!lessonDb) {
+          throw new NotFoundException(LESSON_NOT_FOUND);
+        }
+        const section = await this.dbService.section.findFirst({
+          where: { id: lessonDb.sectionId },
+        });
+        if (!section) {
+          throw new NotFoundException(SECTION_NOT_FOUND);
+        }
+        const course = await this.dbService.course.findFirst({
+          where: { id: section.courseId },
+        });
+        if (!course) {
+          throw new NotFoundException(COURSE_NOT_FOUND);
+        }
+        if (course.authorId !== userId && role !== 'admin') {
+          throw new ForbiddenException('Нет доступа');
+        }
+        return await this.dbService.lesson.update({
+          where: { id: lesson.id },
+          data: { sequence: lesson.sequence },
+        });
+      }),
     );
   }
 
@@ -149,7 +204,7 @@ export class LessonsService {
     });
   }
 
-  async delete(lessonId: number) {
+  async delete(lessonId: number, userId: number, role: string) {
     const defaultIds = { sectionId: 0, lessonId: 0 };
     const lesson = await this.dbService.lesson.findFirst({
       where: { id: lessonId },
@@ -162,6 +217,20 @@ export class LessonsService {
     });
     if (!section) {
       throw new NotFoundException(SECTION_NOT_FOUND);
+    }
+    const course = await this.dbService.course.findFirst({
+      where: { id: section.courseId },
+    });
+    if (!course) {
+      throw new NotFoundException(COURSE_NOT_FOUND);
+    }
+    if (course.authorId !== userId && role !== 'admin') {
+      throw new ForbiddenException('Нет доступа');
+    }
+    const countLessons = (await this.getAllLessonsBySectionId(lesson.sectionId))
+      .length;
+    if (lesson.sequence === 1 && countLessons < 2) {
+      throw new ForbiddenException(LESSON_LAST_NOT_DELETE);
     }
     const userIds = await this.dbService.myCourse.findMany({
       where: { courseId: section.courseId },

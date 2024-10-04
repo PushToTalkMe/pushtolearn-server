@@ -19,16 +19,20 @@ import {
 import { AuthGuard } from '../auth/auth.guard';
 import { AdminGuard } from '../auth/admin.guard';
 import { IdValidationPipe } from '../pipes/id-validation.pipe';
+import { SessionInfoDto } from 'src/auth/dto';
+import { SessionInfo } from 'src/auth/session-info.decorator';
 
 @Controller('sections')
 @UseGuards(AuthGuard)
-@UseGuards(AdminGuard)
 export class SectionsController {
   constructor(private readonly sectionsService: SectionsService) {}
   @Post('create')
   @ApiCreatedResponse()
-  async create(@Body() dto: CreateSectionDto) {
-    return this.sectionsService.create(dto);
+  async create(
+    @Body() dto: CreateSectionDto,
+    @SessionInfo() session: SessionInfoDto,
+  ) {
+    return this.sectionsService.create(dto, session.id, session.role);
   }
 
   @Patch('update/:sectionId')
@@ -38,21 +42,33 @@ export class SectionsController {
   async patchSection(
     @Param('sectionId', IdValidationPipe) sectionId: number,
     @Body() body: PatchSectionDto,
+    @SessionInfo() session: SessionInfoDto,
   ) {
-    return this.sectionsService.patchSection(sectionId, body);
+    return this.sectionsService.patchSection(
+      sectionId,
+      body,
+      session.id,
+      session.role,
+    );
   }
 
   @Post('update/sequences')
   @ApiOkResponse()
-  async patchSequences(@Body() body: PatchSequences) {
-    return this.sectionsService.patchSequences(body);
+  async patchSequences(
+    @Body() body: PatchSequences,
+    @SessionInfo() session: SessionInfoDto,
+  ) {
+    return this.sectionsService.patchSequences(body, session.id, session.role);
   }
 
   @Delete('delete/:sectionId')
   @ApiOkResponse({
-    type: SectionDto
+    type: SectionDto,
   })
-  async deleteSection(@Param('sectionId', IdValidationPipe) sectionId: number) {
-    return this.sectionsService.delete(sectionId);
+  async deleteSection(
+    @Param('sectionId', IdValidationPipe) sectionId: number,
+    @SessionInfo() session: SessionInfoDto,
+  ) {
+    return this.sectionsService.delete(sectionId, session.id, session.role);
   }
 }

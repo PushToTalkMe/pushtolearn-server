@@ -56,10 +56,10 @@ model Course {
   id Int @id @default(autoincrement())
 	title String
 	author String
+  authorId Int
 	img String
 	duration String
 	tags String[]
-	price Int
   inDeveloping Boolean
   myCourses MyCourse[]
 	sections Section[]

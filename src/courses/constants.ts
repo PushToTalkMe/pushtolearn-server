@@ -1,5 +1,6 @@
 export const COURSE_NOT_FOUND = 'Курс с таким ID не найден';
 export const SECTION_NOT_FOUND = 'Раздела с таким ID не найдено';
+export const SECTION_LAST_NOT_DELETE = 'Последнюю секцию нельзя удалить';
 export const SECTION_NOT_FOUND_FOR_RELEASE =
   'Не найдены разделы для данного курса. Необходимо внести хотя бы один раздел';
 export const LESSON_NOT_FOUND_FOR_RELEASE =

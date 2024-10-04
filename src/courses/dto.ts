@@ -27,16 +27,16 @@ export class CreateCourseDto {
   @IsArray()
   @IsString({ each: true })
   tags: string[];
-
-  @ApiProperty({ example: 3999 })
-  @IsNumber()
-  price: number;
 }
 
 export class CreateCoursesDtoWithOwner extends CreateCourseDto {
   @ApiProperty({ example: 'ivan Ivanov' })
   @IsString()
   author: string;
+
+  @ApiProperty({ example: 2 })
+  @IsNumber()
+  authorId: number;
 }
 
 export class CourseDto {
@@ -60,9 +60,6 @@ export class CourseDto {
     type: [String],
   })
   tags: string[];
-
-  @ApiProperty({ example: 1 })
-  price: number;
 
   @ApiProperty({ example: false })
   inDeveloping: boolean;
