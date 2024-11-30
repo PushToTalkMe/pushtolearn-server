@@ -2,13 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { SignInBodyDto } from '../src/auth/dto';
+import { SignInBodyDto, SignUpBodyDto } from '../src/auth/dto';
 import { ConfigService } from '@nestjs/config';
 import {
   ADMIN_LOGIN,
   ADMIN_PASSWORD,
+  CONTENT,
+  EXERCISE,
+  QUESTIONS,
   STUDENT_LOGIN,
   STUDENT_PASSWORD,
+  TASKS,
+  TEST,
+  THEORY,
 } from './constants';
 import {
   CreateCourseDto,
@@ -19,6 +25,8 @@ import { NOT_PERMITTED } from '../src/auth/admin.constants';
 import { CreateSectionDto } from '../src/sections/dto';
 import { CreateLessonDto, LessonDto } from '../src/lessons/dto';
 import { LESSON_NOT_FOUND, SECTION_NOT_FOUND } from '../src/courses/constants';
+import { USER_DELETED } from '../src/users/constants';
+import { randomBytes } from 'crypto';
 
 const configService = new ConfigService();
 
@@ -27,9 +35,23 @@ const signInAdminDto: SignInBodyDto = {
   password: configService.get(ADMIN_PASSWORD),
 };
 
+const signUpAdminDto: SignUpBodyDto = {
+  email: configService.get(ADMIN_LOGIN),
+  password: configService.get(ADMIN_PASSWORD),
+  firstName: randomBytes(4).toString('hex'),
+  lastName: randomBytes(4).toString('hex'),
+};
+
 const signInStudentDto: SignInBodyDto = {
   email: configService.get(STUDENT_LOGIN),
   password: configService.get(STUDENT_PASSWORD),
+};
+
+const signUpStudentDto: SignUpBodyDto = {
+  email: configService.get(STUDENT_LOGIN),
+  password: configService.get(STUDENT_PASSWORD),
+  firstName: randomBytes(4).toString('hex'),
+  lastName: randomBytes(4).toString('hex'),
 };
 
 const testCourseDto: CreateCourseDto = {
@@ -47,7 +69,8 @@ const testSectionDto: CreateSectionDto = {
 
 const testLessonDto: CreateLessonDto = {
   title: 'Основы JavaScript',
-  text: '## Основы JavaScript',
+  data: { questions: QUESTIONS },
+  type: TEST,
   sectionId: 0,
 };
 
@@ -69,16 +92,27 @@ describe('CourseController, BuyController, SectionController и LessonController
 
     app = moduleFixture.createNestApplication();
     await app.init();
-  });
 
-  it('/courses/create (POST) === success (Создание курса администратором)', async () => {
     await request(app.getHttpServer())
-      .post('/auth/sign-in')
-      .send(signInAdminDto)
+      .post('/auth/sign-up')
+      .send(signUpStudentDto)
+      .expect(201)
       .then(({ headers }: request.Response) => {
         cookies = headers['set-cookie'];
         return;
       });
+
+    await request(app.getHttpServer())
+      .post('/auth/sign-up')
+      .send(signUpAdminDto)
+      .expect(201)
+      .then(({ headers }: request.Response) => {
+        cookies = headers['set-cookie'];
+        return;
+      });
+  });
+
+  it('/courses/create (POST) === success (Создание курса администратором)', async () => {
     return request(app.getHttpServer())
       .post('/courses/create')
       .set('Cookie', cookies)
@@ -118,7 +152,7 @@ describe('CourseController, BuyController, SectionController и LessonController
       });
   });
 
-  it('/lessons/create (POST) === success (Создание урока №1 для раздела №1)', async () => {
+  it('/lessons/create (POST) === success (Создание урока №1 (типа Test) для раздела №1)', async () => {
     return request(app.getHttpServer())
       .post('/lessons/create')
       .set('Cookie', cookies)
@@ -198,12 +232,17 @@ describe('CourseController, BuyController, SectionController и LessonController
       });
   });
 
-  it('/lessons/delete/:lessonId (DELETE) === success (Создание урока №2 для разделе №1 и его последующее удаление)', async () => {
+  it('/lessons/delete/:lessonId (DELETE) === success (Создание урока №2 (типа Exercise) для разделе №1 и его последующее удаление)', async () => {
     let lessonIdForDelete: number;
     await request(app.getHttpServer())
       .post('/lessons/create')
       .set('Cookie', cookies)
-      .send({ ...testLessonDto, sectionId })
+      .send({
+        ...testLessonDto,
+        sectionId,
+        type: EXERCISE,
+        data: { tasks: TASKS },
+      })
       .expect(201)
       .then(({ body }: request.Response) => {
         lessonIdForDelete = body.id;
@@ -214,6 +253,24 @@ describe('CourseController, BuyController, SectionController и LessonController
       .delete('/lessons/delete/' + lessonIdForDelete)
       .set('Cookie', cookies)
       .expect(200);
+  });
+
+  it('/lessons/create (POST) === success (Создание урока №3 (типа Theory) для разделе №1)', async () => {
+    await request(app.getHttpServer())
+      .post('/lessons/create')
+      .set('Cookie', cookies)
+      .send({
+        ...testLessonDto,
+        sectionId,
+        type: THEORY,
+        data: { content: CONTENT },
+      })
+      .expect(201)
+      .then(({ body }: request.Response) => {
+        lessonId = body.id;
+        expect(lessonId).toBeDefined();
+        return;
+      });
   });
 
   it('/courses/create (POST) === failed, not permitted (Попытка создать курс обычным пользователем)', async () => {
@@ -304,7 +361,7 @@ describe('CourseController, BuyController, SectionController и LessonController
       .expect(200)
       .then(({ body }: request.Response) => {
         const lessonCount = body.lessonCount;
-        expect(lessonCount).toEqual(1);
+        expect(lessonCount).toEqual(2);
         return;
       });
   });
@@ -329,7 +386,7 @@ describe('CourseController, BuyController, SectionController и LessonController
       });
   });
 
-  it('/courses/my/:courseId (GET) === success (Просмотр купленного курса с названиями всех секций и уроков обычным пользователем)', async () => {
+  it('/courses/my/:courseId (GET) === success (Просмотр купленного курса с названиями всех секций и названиями и типами всех уроков обычным пользователем)', async () => {
     return request(app.getHttpServer())
       .get('/courses/my/' + courseId)
       .set('Cookie', cookies)
@@ -337,10 +394,10 @@ describe('CourseController, BuyController, SectionController и LessonController
       .then(({ body }: request.Response) => {
         const course: CourseDtoWithSections = body;
         expect(course.id).toEqual(courseId);
-        expect(course.sectionsWithLessonsTitle[0].title).toEqual(
+        expect(course.sectionsWithLessonsStat[0].title).toEqual(
           updatedTitleSection,
         );
-        expect(course.sectionsWithLessonsTitle[0].lessonsTitle[0]).toEqual(
+        expect(course.sectionsWithLessonsStat[0].lessonsStat[0].title).toEqual(
           updatedTitleLesson,
         );
         return;
@@ -393,5 +450,32 @@ describe('CourseController, BuyController, SectionController и LessonController
       .expect(200);
   });
 
-  afterAll(async () => await app.close());
+  afterAll(async () => {
+    await request(app.getHttpServer())
+      .delete('/auth/delete')
+      .set('Cookie', cookies)
+      .expect(200)
+      .then(({ body }: request.Response) => {
+        const message = body.message;
+        expect(message).toEqual(USER_DELETED);
+        return;
+      });
+    await request(app.getHttpServer())
+      .post('/auth/sign-in')
+      .send(signInStudentDto)
+      .then(({ headers }: request.Response) => {
+        cookies = headers['set-cookie'];
+        return;
+      });
+    await request(app.getHttpServer())
+      .delete('/auth/delete')
+      .set('Cookie', cookies)
+      .expect(200)
+      .then(({ body }: request.Response) => {
+        const message = body.message;
+        expect(message).toEqual(USER_DELETED);
+        return;
+      });
+    await app.close();
+  });
 });

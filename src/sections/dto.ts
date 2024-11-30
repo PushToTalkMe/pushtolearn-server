@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { LessonStat } from '../lessons/dto';
 
 export class CreateSectionDto {
   @ApiProperty({ example: 'Введение' })
@@ -31,49 +32,62 @@ export class PatchSectionDto {
 
 export class SectionDto {
   @ApiProperty({ example: '1' })
-  @IsNumber()
   id: number;
 
   @ApiProperty({ example: 'Введение' })
-  @IsString()
   title: string;
 
   @ApiProperty({ example: '1' })
-  @IsNumber()
   courseId: number;
 
   @ApiProperty({ example: '5' })
-  @IsNumber()
   sequence: number;
 
   @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
-  @IsDate()
   createdAt: Date;
+
+  @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
+  updatedAt: Date;
 }
 
-export class SectionsWithLessonsTitleDto {
-  @ApiProperty({ example: 'Что такое NestJS' })
-  @IsArray()
-  @IsString({ each: true })
-  lessonsTitle: string[];
+export class SectionsWithLessonsStatDto {
+  @ApiProperty({
+    example: [
+      { id: 1, title: 'Введение', type: 'Theory', viewed: true, sequence: 1 },
+      {
+        id: 2,
+        title: 'Упражнение по HTML',
+        type: 'Exercise',
+        viewed: false,
+        sequence: 2,
+      },
+      {
+        id: 3,
+        title: 'Тест по HTML',
+        type: 'Test',
+        viewed: false,
+        sequence: 3,
+      },
+    ],
+    type: [LessonStat],
+  })
+  lessonsStat: LessonStat[];
 
   @ApiProperty({ example: '1' })
-  @IsNumber()
   id: number;
 
   @ApiProperty({ example: 'Введение' })
-  @IsString()
   title: string;
 
   @ApiProperty({ example: '2' })
-  @IsNumber()
   courseId: number;
 
   @ApiProperty({ example: '5' })
-  @IsNumber()
   sequence: number;
 
   @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
-  @IsDate()
   createdAt: Date;
+
+  @ApiProperty({ example: '2024-06-17T13:55:38.747Z' })
+  updatedAt: Date;
 }

@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { DbService } from '../db/db.service';
 import { CreateSectionDto, PatchSectionDto } from './dto';
 import { LessonsService } from '../lessons/lessons.service';
-import { SECTION_NOT_FOUND } from '../courses/constants';
+import { COURSE_NOT_FOUND, SECTION_NOT_FOUND } from '../courses/constants';
 
 @Injectable()
 export class SectionsService {
@@ -12,7 +12,23 @@ export class SectionsService {
   ) {}
 
   async create(dto: CreateSectionDto) {
-    return this.dbService.section.create({ data: dto });
+    const course = await this.dbService.course.findFirst({
+      where: { id: dto.courseId },
+    });
+    if (!course) {
+      throw new NotFoundException(COURSE_NOT_FOUND);
+    }
+    const maxSequence = await this.dbService.section.findMany({
+      where: { courseId: course.id },
+      orderBy: { sequence: 'desc' },
+      take: 1,
+    });
+
+    const nextSequence =
+      maxSequence.length > 0 ? maxSequence[0].sequence + 1 : 1;
+    return this.dbService.section.create({
+      data: { ...dto, sequence: nextSequence },
+    });
   }
 
   async patchSection(sectionId: number, patch: PatchSectionDto) {
@@ -63,10 +79,32 @@ export class SectionsService {
     });
   }
 
-  async getAllLessonsTitleBySectionId(sectionId: number) {
+  async getAllLessonsStatBySectionId(sectionId: number, userId: number) {
     const lessons =
       await this.lessonsService.getAllLessonsBySectionId(sectionId);
-    const lessonsTitle = lessons.map((lesson) => lesson.title);
-    return lessonsTitle;
+    const lessonsStat = await Promise.all(
+      lessons.map(async (lesson) => {
+        const { viewed } = await this.dbService.userStatLesson.findFirst({
+          where: { lessonId: lesson.id, userId },
+        });
+        return {
+          id: lesson.id,
+          title: lesson.title,
+          type: lesson.type,
+          viewed,
+          sequence: lesson.sequence,
+        };
+      }),
+    );
+    return lessonsStat;
+  }
+
+  async getAllSectionsWithLessons(sectionId: number) {
+    const lessons =
+      await this.lessonsService.getAllLessonsBySectionId(sectionId);
+    const lessonsTitleAndType = lessons.map(async (lesson) => {
+      return { title: lesson.title, type: lesson.type };
+    });
+    return lessonsTitleAndType;
   }
 }

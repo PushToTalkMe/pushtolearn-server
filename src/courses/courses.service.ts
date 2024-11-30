@@ -24,13 +24,9 @@ export class CoursesService {
     private readonly sectionsService: SectionsService,
     private readonly lessonsService: LessonsService,
   ) {}
-  async create(dto: CreateCoursesDtoWithOwner, userId: number) {
-    return this.dbService.$transaction(async () => {
-      const course = await this.dbService.course.create({
-        data: dto,
-      });
-      await this.myCoursesService.addCourse(userId, course.id);
-      return course;
+  async create(dto: CreateCoursesDtoWithOwner) {
+    return this.dbService.course.create({
+      data: dto,
     });
   }
 

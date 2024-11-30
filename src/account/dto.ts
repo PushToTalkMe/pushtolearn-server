@@ -37,15 +37,13 @@ export class PatchAccountDto {
     example: 'Vlad',
   })
   @IsString()
-  @IsOptional()
-  firstName?: string;
+  firstName: string;
 
   @ApiProperty({
     example: 'Ilyin',
   })
   @IsString()
-  @IsOptional()
-  lastName?: string;
+  lastName: string;
 
   @ApiProperty({
     example: 'PushToTalk',
